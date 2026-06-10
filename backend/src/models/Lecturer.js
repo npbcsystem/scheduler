@@ -7,9 +7,9 @@ const lecturerSchema = new mongoose.Schema(
       required: true
     },
 
-    email: String,
-
     phone: String,
+
+    email: String,
 
     courses: [
       {
@@ -25,9 +25,16 @@ const lecturerSchema = new mongoose.Schema(
     active: {
       type: Boolean,
       default: true
+    },
+
+    maxAssignmentsPerMonth: {
+      type: Number,
+      default: 4
     }
   },
-  { timestamps: true }
+  {
+    timestamps: true
+  }
 );
 
 export default mongoose.model(

@@ -4,7 +4,8 @@ const progressSchema = new mongoose.Schema(
   {
     branch: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Branch"
+      ref: "Branch",
+      required: true
     },
 
     level: {
@@ -13,7 +14,8 @@ const progressSchema = new mongoose.Schema(
         "CERTIFICATE",
         "ASSOCIATE",
         "DIPLOMA"
-      ]
+      ],
+      required: true
     },
 
     completedCourses: [
@@ -23,7 +25,9 @@ const progressSchema = new mongoose.Schema(
       }
     ]
   },
-  { timestamps: true }
+  {
+    timestamps: true
+  }
 );
 
 export default mongoose.model(

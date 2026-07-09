@@ -21,7 +21,7 @@ import {
   TableRow,
   TextField,
   Typography,
-  Snackbar
+  Snackbar,
 } from "@mui/material";
 
 import RefreshIcon from "@mui/icons-material/Refresh";
@@ -32,8 +32,7 @@ import {
   approveAll,
 } from "../services/scheduleService";
 import EditScheduleDialog from "../components/dialogs/EditScheduleDialog";
-
-
+import { getPendingAssignments } from "../services/pendingAssignmentService";
 
 export default function Schedules() {
   const [loading, setLoading] = useState(true);
@@ -42,9 +41,16 @@ export default function Schedules() {
 
   const [schedules, setSchedules] = useState([]);
 
+  const [pendingAssignments, setPendingAssignments] = useState([]);
+
   const [search, setSearch] = useState("");
 
   const [weekFilter, setWeekFilter] = useState("ALL");
+
+  const [selectedPending, setSelectedPending] = useState(null);
+
+  const [assignMode, setAssignMode] = useState(false);
+  
 
   // dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -82,8 +88,20 @@ export default function Schedules() {
   // Initial load
   //--------------------------------------------------
 
+  // load schedules pending
+  const loadPendingAssignments = async () => {
+    try {
+      const data = await getPendingAssignments();
+
+      setPendingAssignments(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   useEffect(() => {
     loadSchedules();
+    loadPendingAssignments();
 
     // const interval = setInterval(() => {
     //   loadSchedules();
@@ -324,8 +342,7 @@ export default function Schedules() {
                         <Typography variant="body2" color="text.secondary">
                           {schedule.lecturer?.phone}
                         </Typography>
-                        
-                        </TableCell>
+                      </TableCell>
 
                       <TableCell>
                         <Chip
@@ -355,27 +372,94 @@ export default function Schedules() {
           </TableContainer>
         )}
       </Paper>
+      <Paper sx={{ p: 2, mt: 3 }}>
+        <Typography variant="h5" sx={{ mt: 5, mb: 2 }}>
+          Unassigned Classes
+        </Typography>
+
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Branch</TableCell>
+
+              <TableCell>Level</TableCell>
+
+              <TableCell>Suggested Course</TableCell>
+
+              <TableCell>Reason</TableCell>
+
+              <TableCell align="center">Action</TableCell>
+            </TableRow>
+          </TableHead>
+
+          <TableBody>
+            {pendingAssignments.map((item) => (
+              <TableRow key={item._id}>
+                <TableCell>{item.branch.name}</TableCell>
+
+                <TableCell>{item.level}</TableCell>
+
+                <TableCell>
+                  {item.suggestedCourse.code}
+                  {" - "}
+                  {item.suggestedCourse.name}
+                </TableCell>
+
+                <TableCell>{item.reason}</TableCell>
+
+                <TableCell align="center">
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={() => {
+                      setSelectedPending(item);
+
+                      setAssignMode(true);
+
+                      setDialogOpen(true);
+                    }}
+                  >
+                    Assign
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </Paper>
       <EditScheduleDialog
         open={dialogOpen}
+        onClose={() => {
+          setDialogOpen(false);
+
+          setAssignMode(false);
+
+          setSelectedPending(null);
+          setSelectedSchedule(null);
+        }}
         schedule={selectedSchedule}
-        onClose={() => setDialogOpen(false)}
-        onUpdated={loadSchedules}
+        pendingAssignment={selectedPending}
+        assignMode={assignMode}
+        onUpdated={() => {
+          loadSchedules();
+
+          loadPendingAssignments();
+        }}
       />
     </Container>
   );
-<Snackbar
-  open={snackbarOpen}
-  autoHideDuration={3000}
-  onClose={() => setSnackbarOpen(false)}
-  anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
->
-  <Alert
-    severity={snackbarSeverity}
+  <Snackbar
+    open={snackbarOpen}
+    autoHideDuration={3000}
     onClose={() => setSnackbarOpen(false)}
-    variant="filled"
+    anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
   >
-    {snackbarMessage}
-  </Alert>
-</Snackbar>
+    <Alert
+      severity={snackbarSeverity}
+      onClose={() => setSnackbarOpen(false)}
+      variant="filled"
+    >
+      {snackbarMessage}
+    </Alert>
+  </Snackbar>;
 }
-

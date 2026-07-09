@@ -20,11 +20,14 @@ import {
 } from "../../services/lecturerService";
 import { updateSchedule } from "../../services/scheduleService";
 import { getRemainingCourses } from "../../services/progressService";
+import { assignPendingAssignment } from "../../services/pendingAssignmentService";
 
 export default function EditScheduleDialog({
   open,
   onClose,
   schedule,
+  pendingAssignment,
+  assignMode,
   onUpdated,
 }) {
   const [lecturers, setLecturers] = useState([]);
@@ -39,30 +42,31 @@ export default function EditScheduleDialog({
 
   const [selectedCourse, setSelectedCourse] = useState("");
 
+  const current = assignMode ? pendingAssignment : schedule;
+
   useEffect(() => {
-    if (!schedule) return;
+    if (!current) return;
 
-    loadCourses();
+    loadCourses(current.branch._id, current.level);
 
-    loadLecturers(schedule.course._id);
+    if (assignMode) {
+      setSelectedCourse(current.suggestedCourse._id);
 
-    setSelectedCourse(schedule.course._id);
+      loadLecturers(current.suggestedCourse._id);
 
-    setSelectedLecturer(schedule.lecturer._id);
+      setSelectedLecturer("");
 
-    setStatus(schedule.status);
-  }, [schedule]);
+      setStatus("DRAFT");
+    } else {
+      setSelectedCourse(current.course._id);
 
-  //   load lecturer by course
-  useEffect(() => {
-    if (schedule) {
-      loadLecturers(schedule.course._id);
+      loadLecturers(current.course._id);
 
-      setSelectedLecturer(schedule.lecturer?._id);
+      setSelectedLecturer(current.lecturer?._id || "");
 
-      setStatus(schedule.status);
+      setStatus(current.status);
     }
-  }, [schedule]);
+  }, [current, assignMode]);
 
   const loadLecturers = async (courseId) => {
     try {
@@ -74,12 +78,9 @@ export default function EditScheduleDialog({
     }
   };
 
-  const loadCourses = async () => {
+  const loadCourses = async (branchId, level) => {
     try {
-      const data = await getRemainingCourses(
-        schedule.branch._id,
-        schedule.level,
-      );
+      const data = await getRemainingCourses(branchId, level);
 
       setCourses(data);
     } catch (err) {
@@ -91,11 +92,31 @@ export default function EditScheduleDialog({
     try {
       setSaving(true);
 
-      await updateSchedule(schedule._id, {
-        course: selectedCourse,
-        lecturer: selectedLecturer,
-        status,
-      });
+      if (assignMode) {
+        await assignPendingAssignment(
+          pendingAssignment._id,
+
+          {
+            course: selectedCourse,
+
+            lecturer: selectedLecturer,
+
+            status,
+          },
+        );
+      } else {
+        await updateSchedule(
+          schedule._id,
+
+          {
+            course: selectedCourse,
+
+            lecturer: selectedLecturer,
+
+            status,
+          },
+        );
+      }
 
       onUpdated();
 
@@ -107,24 +128,27 @@ export default function EditScheduleDialog({
     }
   };
 
-  if (!schedule) return null;
+  if (!current) return null;
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>Edit Schedule</DialogTitle>
+      <DialogTitle>
+        {assignMode ? "Assign Pending Class" : "Edit Schedule"}
+      </DialogTitle>
 
       <DialogContent>
         <Stack spacing={3} sx={{ mt: 1 }}>
           <Typography>
-            <strong>Branch:</strong> {schedule.branch?.name}
+            <strong>Branch:</strong> {current.branch?.name}
           </Typography>
 
           <Typography>
-            <strong>Course:</strong> {schedule.course?.name}
+            <strong>Course:</strong>{" "}
+            {assignMode ? current.suggestedCourse?.name : current.course?.name}
           </Typography>
 
           <Typography>
-            <strong>Level:</strong> {schedule.level}
+            <strong>Level:</strong> {current.level}
           </Typography>
 
           <FormControl fullWidth>

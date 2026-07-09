@@ -1,6 +1,7 @@
 import { generateSchedule } from "../services/schedulerService.js";
 import Schedule from "../models/Schedule.js";
 import Lecturer from "../models/Lecturer.js";
+import Progress from "../models/Progress.js";
 
 export const generate = async (req, res) => {
   try {
@@ -37,6 +38,8 @@ export const updateSchedule = async (req, res) => {
     const { course, lecturer, status } = req.body;
 
     const schedule = await Schedule.findById(req.params.id);
+
+    const previousStatus = schedule.status;
 
     if (!schedule) {
       return res.status(404).json({
@@ -92,8 +95,90 @@ export const updateSchedule = async (req, res) => {
     //----------------------------------------------------
 
     if (status) {
-      schedule.status = status;
+
+  schedule.status = status;
+
+  //--------------------------------------------------
+  // Progress Record
+  //--------------------------------------------------
+
+  let progress = await Progress.findOne({
+    branch: schedule.branch,
+    level: schedule.level,
+  });
+
+  if (!progress) {
+
+    progress = await Progress.create({
+      branch: schedule.branch,
+      level: schedule.level,
+      completedCourses: [],
+    });
+
+  }
+
+  //--------------------------------------------------
+  // APPROVED -> COMPLETED
+  //--------------------------------------------------
+
+  if (
+    previousStatus !== "COMPLETED" &&
+    status === "COMPLETED"
+  ) {
+
+    const exists = progress.completedCourses.some(
+      (item) =>
+        item.course.toString() ===
+        schedule.course.toString()
+    );
+
+    if (!exists) {
+
+      progress.completedCourses.push({
+
+        course: schedule.course,
+
+        lecturer: schedule.lecturer,
+
+        schedule: schedule._id,
+
+        completedDate: new Date(),
+
+        manuallyCompleted: false,
+
+      });
+
+      console.log("Course added to progress.");
+
     }
+
+  }
+
+  //--------------------------------------------------
+  // COMPLETED -> Anything Else
+  //--------------------------------------------------
+
+  if (
+    previousStatus === "COMPLETED" &&
+    status !== "COMPLETED"
+  ) {
+
+    progress.completedCourses =
+      progress.completedCourses.filter(
+
+        (item) =>
+          item.course.toString() !==
+          schedule.course.toString()
+
+      );
+
+      console.log("Course removed from progress.");
+
+  }
+
+  await progress.save();
+
+}
 
     await schedule.save();
 
@@ -115,17 +200,15 @@ export const updateSchedule = async (req, res) => {
 
   const lecturerDoc = await Lecturer.findById(lecturer);
 
-if (
-  course &&
-  lecturer &&
-  !lecturerDoc.courses.some(
-    (c) => c.toString() === course
-  )
-) {
-  return res.status(400).json({
-    message: "Selected lecturer cannot teach this course.",
-  });
-}
+  if (
+    course &&
+    lecturer &&
+    !lecturerDoc.courses.some((c) => c.toString() === course)
+  ) {
+    return res.status(400).json({
+      message: "Selected lecturer cannot teach this course.",
+    });
+  }
 };
 
 export const approveWeek = async (req, res) => {

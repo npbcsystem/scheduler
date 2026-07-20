@@ -7,6 +7,7 @@ import courseRoutes from "./routes/courseRoutes.js";
 import lecturerRoutes from "./routes/lecturerRoutes.js";
 import progressRoutes from "./routes/progressRoutes.js";
 import scheduleRoutes from "./routes/scheduleRoutes.js";
+import importRoutes from "./routes/importRoutes.js";
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use("/api/branches", branchRoutes);
 app.use("/api/lecturers", lecturerRoutes);
 app.use("/api/progress", progressRoutes);
 app.use("/api/schedule", scheduleRoutes);
+app.use("/api/import", importRoutes);
 
 app.get("/", (req, res) => {
   res.json({

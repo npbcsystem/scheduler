@@ -4,12 +4,20 @@ const lecturerSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: true
+      required: true,
+      trim: true
     },
 
-    phone: String,
+    phone: {
+      type: String,
+      trim: true
+    },
 
-    email: String,
+    email: {
+      type: String,
+      lowercase: true,
+      trim: true
+    },
 
     courses: [
       {
@@ -18,9 +26,25 @@ const lecturerSchema = new mongoose.Schema(
       }
     ],
 
-    preferredRegions: [String],
+    preferredRegions: [
+      {
+        type: String,
+        trim: true
+      }
+    ],
 
-    secondaryRegions: [String],
+    secondaryRegions: [
+      {
+        type: String,
+        trim: true
+      }
+    ],
+
+    // Teaching weeks lecturer is available
+    availability: {
+      type: [Number],
+      default: [1, 2, 3, 4]
+    },
 
     active: {
       type: Boolean,
@@ -30,6 +54,12 @@ const lecturerSchema = new mongoose.Schema(
     maxAssignmentsPerMonth: {
       type: Number,
       default: 4
+    },
+
+    // Reset to 0 whenever a new month's schedule is generated
+    currentAssignments: {
+      type: Number,
+      default: 0
     }
   },
   {
@@ -37,7 +67,4 @@ const lecturerSchema = new mongoose.Schema(
   }
 );
 
-export default mongoose.model(
-  "Lecturer",
-  lecturerSchema
-);
+export default mongoose.model("Lecturer", lecturerSchema);

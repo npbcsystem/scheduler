@@ -5,65 +5,58 @@ const lecturerSchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
-      trim: true
+      trim: true,
     },
 
     phone: {
       type: String,
-      trim: true
     },
 
     email: {
       type: String,
+      unique: true,
       lowercase: true,
-      trim: true
+      trim: true,
     },
 
     courses: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Course"
-      }
+        ref: "Course",
+        required: true,
+      },
     ],
 
     preferredRegions: [
       {
         type: String,
-        trim: true
-      }
+      },
     ],
 
     secondaryRegions: [
       {
         type: String,
-        trim: true
-      }
+      },
     ],
-
-    // Teaching weeks lecturer is available
-    availability: {
-      type: [Number],
-      default: [1, 2, 3, 4]
-    },
 
     active: {
       type: Boolean,
-      default: true
+      default: true,
     },
 
     maxAssignmentsPerMonth: {
       type: Number,
-      default: 4
+      default: 4,
+      min: 1,
     },
 
-    // Reset to 0 whenever a new month's schedule is generated
     currentAssignments: {
       type: Number,
-      default: 0
-    }
+      default: 0,
+    },
   },
   {
-    timestamps: true
+    timestamps: true,
   }
 );
 

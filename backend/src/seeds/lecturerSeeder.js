@@ -6,18 +6,16 @@ import Course from "../models/Course.js";
 
 dotenv.config();
 
-
 const getCourseIds = async (courseCodes) => {
   const courses = await Course.find({
-    code: { $in: courseCodes }
+    code: { $in: courseCodes },
   });
 
-  return courses.map(course => course._id);
+  return courses.map((course) => course._id);
 };
 
 const lecturerData = [
-
-{
+  {
     name: "Prof. Bernard",
 
     phone: "0700000001",
@@ -25,28 +23,26 @@ const lecturerData = [
     email: "bernard@npbc.co.ke",
 
     courseCodes: [
-        "DIP003",
-        "DIP004",
-        "ASS010",
-        "ASS006",
-        "DIP010"
+      "ASS006",
+      "ASS010",
+      "ASS011",
+      "DIP003",
+      "DIP004",
+      "DIP006",
+      "DIP010",
+      "DIP011",
     ],
 
-    preferredRegions: [
-        "Nairobi"
-    ],
+    preferredRegions: ["Nairobi", "Kiambu"],
 
-    secondaryRegions: [
-        "Kiambu",
-        "Machakos"
-    ],
+    secondaryRegions: ["Machakos", "Nakuru"],
 
-    availability: [1,2,3,4],
+    active: true,
 
-    maxAssignmentsPerMonth: 5
-},
+    maxAssignmentsPerMonth: 8,
+  },
 
-{
+  {
     name: "Rev. John Kamau",
 
     phone: "0700000002",
@@ -54,27 +50,26 @@ const lecturerData = [
     email: "john@npbc.co.ke",
 
     courseCodes: [
-        "CERT001",
-        "CERT006",
-        "CERT010",
-        "ASS001",
-        "ASS003"
+      "CERT001",
+      "CERT002",
+      "CERT006",
+      "CERT010",
+      "ASS001",
+      "ASS003",
+      "ASS005",
+      "DIP001",
     ],
 
-    preferredRegions: [
-        "Nakuru"
-    ],
+    preferredRegions: ["Nakuru", "Nairobi"],
 
-    secondaryRegions: [
-        "Nairobi"
-    ],
+    secondaryRegions: ["Kiambu", "Nyeri"],
 
-    availability: [1,2,4],
+    active: true,
 
-    maxAssignmentsPerMonth: 4
-},
+    maxAssignmentsPerMonth: 8,
+  },
 
-{
+  {
     name: "Rev. Peter Mwangi",
 
     phone: "0700000003",
@@ -82,27 +77,26 @@ const lecturerData = [
     email: "peter@npbc.co.ke",
 
     courseCodes: [
-        "CERT003",
-        "CERT011",
-        "ASS004",
-        "ASS009",
-        "DIP005"
+      "CERT003",
+      "CERT004",
+      "CERT011",
+      "ASS004",
+      "ASS009",
+      "DIP005",
+      "DIP009",
+      "DIP011",
     ],
 
-    preferredRegions: [
-        "Nyeri"
-    ],
+    preferredRegions: ["Nyeri", "Meru"],
 
-    secondaryRegions: [
-        "Nairobi"
-    ],
+    secondaryRegions: ["Nairobi", "Kiambu"],
 
-    availability: [1,3,4],
+    active: true,
 
-    maxAssignmentsPerMonth: 4
-},
+    maxAssignmentsPerMonth: 8,
+  },
 
-{
+  {
     name: "Rev. Grace Wanjiku",
 
     phone: "0700000004",
@@ -110,27 +104,26 @@ const lecturerData = [
     email: "grace@npbc.co.ke",
 
     courseCodes: [
-        "CERT005",
-        "ASS002",
-        "ASS011",
-        "DIP002",
-        "DIP011"
+      "CERT005",
+      "CERT008",
+      "ASS002",
+      "ASS006",
+      "ASS011",
+      "DIP002",
+      "DIP010",
+      "DIP011",
     ],
 
-    preferredRegions: [
-        "Kisumu"
-    ],
+    preferredRegions: ["Kisumu", "Kakamega"],
 
-    secondaryRegions: [
-        "Nakuru"
-    ],
+    secondaryRegions: ["Nakuru", "Eldoret"],
 
-    availability: [2,3,4],
+    active: true,
 
-    maxAssignmentsPerMonth: 3
-},
+    maxAssignmentsPerMonth: 8,
+  },
 
-{
+  {
     name: "Rev. Samuel Kiptoo",
 
     phone: "0700000005",
@@ -138,254 +131,491 @@ const lecturerData = [
     email: "samuel@npbc.co.ke",
 
     courseCodes: [
-        "CERT002",
-        "CERT009",
-        "ASS007",
-        "DIP001",
-        "DIP007"
+      "CERT002",
+      "CERT009",
+      "ASS007",
+      "ASS010",
+      "DIP001",
+      "DIP007",
+      "DIP008",
+      "DIP012",
     ],
 
-    preferredRegions: [
-        "Mombasa"
-    ],
+    preferredRegions: ["Mombasa", "Nairobi"],
 
-    secondaryRegions: [
-        "Nairobi"
-    ],
+    secondaryRegions: ["Machakos", "Kisumu"],
 
-    availability: [1,2,3,4],
+    active: true,
 
-    maxAssignmentsPerMonth: 5
-},
-{
+    maxAssignmentsPerMonth: 8,
+  },
+
+  {
     name: "Rev. David Kimani",
+
     phone: "0700000006",
+
     email: "david.kimani@npbc.co.ke",
-    courseCodes: ["CERT004","CERT008","ASS005","DIP006","DIP009"],
-    preferredRegions: ["Nairobi"],
-    secondaryRegions: ["Kiambu"],
-    availability: [1,2,3,4],
-    maxAssignmentsPerMonth: 4
-},
 
-{
+    courseCodes: [
+      "CERT004",
+      "CERT007",
+      "CERT008",
+      "ASS005",
+      "ASS008",
+      "DIP006",
+      "DIP009",
+      "DIP012",
+    ],
+
+    preferredRegions: ["Nairobi", "Kiambu"],
+
+    secondaryRegions: ["Machakos", "Nakuru"],
+
+    active: true,
+
+    maxAssignmentsPerMonth: 8,
+  },
+
+  {
     name: "Rev. Joseph Kariuki",
+
     phone: "0700000007",
+
     email: "joseph.kariuki@npbc.co.ke",
-    courseCodes: ["CERT007","ASS008","ASS010","DIP003","DIP008"],
-    preferredRegions: ["Kiambu"],
-    secondaryRegions: ["Nairobi"],
-    availability: [1,3,4],
-    maxAssignmentsPerMonth: 4
-},
 
-{
+    courseCodes: [
+      "CERT007",
+      "CERT011",
+      "ASS008",
+      "ASS010",
+      "DIP003",
+      "DIP005",
+      "DIP008",
+      "DIP012",
+    ],
+
+    preferredRegions: ["Kiambu", "Nairobi"],
+
+    secondaryRegions: ["Nyeri", "Nakuru"],
+
+    active: true,
+
+    maxAssignmentsPerMonth: 8,
+  },
+
+  // ---------- CONTINUE WITH PART 2 ----------
+  {
     name: "Rev. Daniel Mwangi",
+
     phone: "0700000008",
+
     email: "daniel.mwangi@npbc.co.ke",
-    courseCodes: ["CERT001","CERT009","ASS001","DIP004","DIP010"],
-    preferredRegions: ["Nakuru"],
-    secondaryRegions: ["Nairobi"],
-    availability: [2,3,4],
-    maxAssignmentsPerMonth: 4
-},
 
-{
+    courseCodes: [
+      "CERT001",
+      "CERT003",
+      "CERT009",
+      "CERT012",
+      "ASS001",
+      "ASS004",
+      "DIP002",
+      "DIP004",
+    ],
+
+    preferredRegions: ["Nakuru", "Nairobi"],
+
+    secondaryRegions: ["Kiambu", "Nyeri"],
+
+    active: true,
+
+    maxAssignmentsPerMonth: 8,
+  },
+
+  {
     name: "Rev. James Njoroge",
+
     phone: "0700000009",
+
     email: "james.njoroge@npbc.co.ke",
-    courseCodes: ["CERT002","ASS003","ASS006","DIP001","DIP007"],
-    preferredRegions: ["Nyeri"],
-    secondaryRegions: ["Kiambu"],
-    availability: [1,2,4],
-    maxAssignmentsPerMonth: 4
-},
 
-{
+    courseCodes: [
+      "CERT002",
+      "CERT006",
+      "CERT012",
+      "ASS003",
+      "ASS006",
+      "ASS007",
+      "DIP001",
+      "DIP007",
+    ],
+
+    preferredRegions: ["Nyeri", "Kiambu"],
+
+    secondaryRegions: ["Nairobi", "Meru"],
+
+    active: true,
+
+    maxAssignmentsPerMonth: 8,
+  },
+
+  {
     name: "Rev. Peter Kariuki",
+
     phone: "0700000010",
+
     email: "peter.kariuki@npbc.co.ke",
-    courseCodes: ["CERT003","ASS004","ASS011","DIP005","DIP011"],
-    preferredRegions: ["Meru"],
-    secondaryRegions: ["Nyeri"],
-    availability: [1,2,3,4],
-    maxAssignmentsPerMonth: 5
-},
 
-{
+    courseCodes: [
+      "CERT003",
+      "CERT005",
+      "CERT011",
+      "ASS002",
+      "ASS004",
+      "ASS011",
+      "DIP005",
+      "DIP011",
+    ],
+
+    preferredRegions: ["Meru", "Nyeri"],
+
+    secondaryRegions: ["Nairobi", "Kiambu"],
+
+    active: true,
+
+    maxAssignmentsPerMonth: 8,
+  },
+
+  {
     name: "Rev. Moses Maina",
+
     phone: "0700000011",
+
     email: "moses.maina@npbc.co.ke",
-    courseCodes: ["CERT005","CERT010","ASS002","DIP002","DIP009"],
-    preferredRegions: ["Kisumu"],
-    secondaryRegions: ["Nakuru"],
-    availability: [2,3,4],
-    maxAssignmentsPerMonth: 3
-},
 
-{
+    courseCodes: [
+      "CERT005",
+      "CERT008",
+      "CERT010",
+      "ASS002",
+      "ASS006",
+      "DIP002",
+      "DIP009",
+      "DIP010",
+    ],
+
+    preferredRegions: ["Kisumu", "Nakuru"],
+
+    secondaryRegions: ["Nairobi", "Eldoret"],
+
+    active: true,
+
+    maxAssignmentsPerMonth: 8,
+  },
+
+  {
     name: "Rev. Stephen Karanja",
+
     phone: "0700000012",
+
     email: "stephen.karanja@npbc.co.ke",
-    courseCodes: ["CERT006","ASS005","ASS009","DIP006","DIP008"],
-    preferredRegions: ["Mombasa"],
-    secondaryRegions: ["Nairobi"],
-    availability: [1,2,3,4],
-    maxAssignmentsPerMonth: 5
-},
 
-{
+    courseCodes: [
+      "CERT004",
+      "CERT006",
+      "ASS005",
+      "ASS008",
+      "ASS009",
+      "DIP006",
+      "DIP008",
+      "DIP012",
+    ],
+
+    preferredRegions: ["Mombasa", "Nairobi"],
+
+    secondaryRegions: ["Kiambu", "Machakos"],
+
+    active: true,
+
+    maxAssignmentsPerMonth: 8,
+  },
+
+  {
     name: "Rev. Isaac Mutua",
+
     phone: "0700000013",
+
     email: "isaac.mutua@npbc.co.ke",
-    courseCodes: ["CERT007","ASS007","ASS010","DIP003","DIP005"],
-    preferredRegions: ["Machakos"],
-    secondaryRegions: ["Nairobi"],
-    availability: [1,2,4],
-    maxAssignmentsPerMonth: 4
-},
 
-{
+    courseCodes: [
+      "CERT007",
+      "CERT009",
+      "ASS007",
+      "ASS010",
+      "ASS011",
+      "DIP003",
+      "DIP005",
+      "DIP009",
+    ],
+
+    preferredRegions: ["Machakos", "Nairobi"],
+
+    secondaryRegions: ["Kiambu", "Mombasa"],
+
+    active: true,
+
+    maxAssignmentsPerMonth: 8,
+  },
+
+  {
     name: "Rev. Andrew Omondi",
+
     phone: "0700000014",
+
     email: "andrew.omondi@npbc.co.ke",
-    courseCodes: ["CERT008","ASS008","ASS011","DIP004","DIP007"],
-    preferredRegions: ["Kisumu"],
-    secondaryRegions: ["Kakamega"],
-    availability: [2,3,4],
-    maxAssignmentsPerMonth: 4
-},
 
-{
+    courseCodes: [
+      "CERT008",
+      "CERT010",
+      "CERT012",
+      "ASS008",
+      "ASS009",
+      "DIP004",
+      "DIP007",
+      "DIP010",
+    ],
+
+    preferredRegions: ["Kisumu", "Kakamega"],
+
+    secondaryRegions: ["Eldoret", "Nakuru"],
+
+    active: true,
+
+    maxAssignmentsPerMonth: 8,
+  },
+
+  // ---------- CONTINUE WITH PART 3 ----------
+  {
     name: "Rev. Paul Otieno",
+
     phone: "0700000015",
+
     email: "paul.otieno@npbc.co.ke",
-    courseCodes: ["CERT009","ASS001","ASS006","DIP002","DIP010"],
-    preferredRegions: ["Kisumu"],
-    secondaryRegions: ["Nairobi"],
-    availability: [1,2,3],
-    maxAssignmentsPerMonth: 4
-},
 
-{
+    courseCodes: [
+      "CERT001",
+      "CERT009",
+      "CERT011",
+      "ASS001",
+      "ASS006",
+      "ASS010",
+      "DIP002",
+      "DIP010",
+    ],
+
+    preferredRegions: ["Kisumu", "Nairobi"],
+
+    secondaryRegions: ["Nakuru", "Eldoret"],
+
+    active: true,
+
+    maxAssignmentsPerMonth: 8,
+  },
+
+  {
     name: "Rev. Charles Kiprono",
+
     phone: "0700000016",
+
     email: "charles.kiprono@npbc.co.ke",
-    courseCodes: ["CERT010","ASS002","ASS009","DIP001","DIP011"],
-    preferredRegions: ["Nakuru"],
-    secondaryRegions: ["Eldoret"],
-    availability: [1,2,3,4],
-    maxAssignmentsPerMonth: 5
-},
 
-{
+    courseCodes: [
+      "CERT002",
+      "CERT010",
+      "CERT012",
+      "ASS002",
+      "ASS009",
+      "ASS011",
+      "DIP001",
+      "DIP011",
+    ],
+
+    preferredRegions: ["Nakuru", "Eldoret"],
+
+    secondaryRegions: ["Kisumu", "Nairobi"],
+
+    active: true,
+
+    maxAssignmentsPerMonth: 8,
+  },
+
+  {
     name: "Rev. Michael Waweru",
+
     phone: "0700000017",
+
     email: "michael.waweru@npbc.co.ke",
-    courseCodes: ["CERT011","ASS003","ASS005","DIP003","DIP006"],
-    preferredRegions: ["Kiambu"],
-    secondaryRegions: ["Nairobi"],
-    availability: [2,3,4],
-    maxAssignmentsPerMonth: 4
-},
 
-{
+    courseCodes: [
+      "CERT003",
+      "CERT006",
+      "CERT008",
+      "ASS003",
+      "ASS005",
+      "ASS008",
+      "DIP003",
+      "DIP006",
+    ],
+
+    preferredRegions: ["Kiambu", "Nairobi"],
+
+    secondaryRegions: ["Nyeri", "Machakos"],
+
+    active: true,
+
+    maxAssignmentsPerMonth: 8,
+  },
+
+  {
     name: "Rev. George Muriithi",
+
     phone: "0700000018",
+
     email: "george.muriithi@npbc.co.ke",
-    courseCodes: ["CERT004","ASS004","ASS007","DIP005","DIP009"],
-    preferredRegions: ["Nyeri"],
-    secondaryRegions: ["Meru"],
-    availability: [1,2,3,4],
-    maxAssignmentsPerMonth: 4
-},
 
-{
+    courseCodes: [
+      "CERT004",
+      "CERT007",
+      "CERT009",
+      "ASS004",
+      "ASS007",
+      "ASS010",
+      "DIP005",
+      "DIP009",
+    ],
+
+    preferredRegions: ["Nyeri", "Meru"],
+
+    secondaryRegions: ["Kiambu", "Nairobi"],
+
+    active: true,
+
+    maxAssignmentsPerMonth: 8,
+  },
+
+  {
     name: "Rev. Francis Njuguna",
+
     phone: "0700000019",
+
     email: "francis.njuguna@npbc.co.ke",
-    courseCodes: ["CERT005","ASS008","ASS010","DIP004","DIP008"],
-    preferredRegions: ["Nairobi"],
-    secondaryRegions: ["Kiambu"],
-    availability: [1,3,4],
-    maxAssignmentsPerMonth: 5
-},
 
-{
+    courseCodes: [
+      "CERT001",
+      "CERT005",
+      "CERT011",
+      "ASS002",
+      "ASS008",
+      "ASS011",
+      "DIP004",
+      "DIP008",
+    ],
+
+    preferredRegions: ["Nairobi", "Kiambu"],
+
+    secondaryRegions: ["Machakos", "Nakuru"],
+
+    active: true,
+
+    maxAssignmentsPerMonth: 8,
+  },
+
+  {
     name: "Rev. Eliud Kibet",
-    phone: "0700000020",
-    email: "eliud.kibet@npbc.co.ke",
-    courseCodes: ["CERT006","ASS009","ASS011","DIP002","DIP007"],
-    preferredRegions: ["Eldoret"],
-    secondaryRegions: ["Nakuru"],
-    availability: [1,2,3,4],
-    maxAssignmentsPerMonth: 4
-}
 
+    phone: "0700000020",
+
+    email: "eliud.kibet@npbc.co.ke",
+
+    courseCodes: [
+      "CERT002",
+      "CERT007",
+      "CERT012",
+      "ASS001",
+      "ASS009",
+      "ASS003",
+      "DIP007",
+      "DIP012",
+    ],
+
+    preferredRegions: ["Eldoret", "Nakuru"],
+
+    secondaryRegions: ["Kisumu", "Nairobi"],
+
+    active: true,
+
+    maxAssignmentsPerMonth: 8,
+  },
 ];
 
 const importData = async () => {
+  try {
+    await connectDB();
 
-    try {
+    await Lecturer.deleteMany();
 
-        await connectDB();
+    const lecturers = [];
 
-        await Lecturer.deleteMany();
+    for (const lecturer of lecturerData) {
+      const courseIds = await getCourseIds(lecturer.courseCodes);
 
-        const lecturers = [];
+      lecturers.push({
+        name: lecturer.name,
 
-        for (const lecturer of lecturerData) {
+        phone: lecturer.phone,
 
-            const courseIds =
-                await getCourseIds(lecturer.courseCodes);
+        email: lecturer.email,
 
-            lecturers.push({
+        courses: courseIds,
 
-                name: lecturer.name,
+        preferredRegions: lecturer.preferredRegions,
 
-                phone: lecturer.phone,
+        secondaryRegions: lecturer.secondaryRegions,
 
-                email: lecturer.email,
+        active: true,
 
-                courses: courseIds,
+        maxAssignmentsPerMonth: lecturer.maxAssignmentsPerMonth,
 
-                preferredRegions:
-                    lecturer.preferredRegions,
-
-                secondaryRegions:
-                    lecturer.secondaryRegions,
-
-                availability:
-                    lecturer.availability,
-
-                active: true,
-
-                maxAssignmentsPerMonth:
-                    lecturer.maxAssignmentsPerMonth,
-
-                currentAssignments: 0
-
-            });
-
-        }
-
-        const inserted =
-            await Lecturer.insertMany(lecturers);
-
-        console.log(
-            `${inserted.length} lecturers seeded successfully.`
-        );
-
-        process.exit();
-
-    } catch (error) {
-
-        console.error(error);
-
-        process.exit(1);
-
+        currentAssignments: 0,
+      });
     }
 
+    const inserted = await Lecturer.insertMany(lecturers);
+
+    // addition
+
+    const ass001 = await Course.findOne({ code: "ASS001" });
+
+const alecturers = await Lecturer.find({
+  courses: ass001._id,
+});
+
+console.log(
+  "ASS001 Lecturers:",
+  alecturers.map((l) => l.name)
+);
+
+// end of addition
+    
+
+    console.log(`${inserted.length} lecturers seeded successfully.`);
+
+    process.exit();
+  } catch (error) {
+    console.error(error);
+
+    process.exit(1);
+  }
 };
 
 importData();

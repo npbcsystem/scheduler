@@ -124,3 +124,61 @@ export const updateSchedule = async (req, res) => {
 
   }
 };
+
+export const approveWeek = async (req, res) => {
+  try {
+
+    const week = Number(req.params.week);
+
+    const result = await Schedule.updateMany(
+      {
+        week,
+        status: "DRAFT",
+      },
+      {
+        status: "APPROVED",
+      }
+    );
+
+    res.json({
+      success: true,
+      week,
+      modified: result.modifiedCount,
+      message: `${result.modifiedCount} schedules approved.`,
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      message: error.message,
+    });
+
+  }
+};
+
+export const approveAll = async (req, res) => {
+  try {
+
+    const result = await Schedule.updateMany(
+      {
+        status: "DRAFT",
+      },
+      {
+        status: "APPROVED",
+      }
+    );
+
+    res.json({
+      success: true,
+      modified: result.modifiedCount,
+      message: `${result.modifiedCount} schedules approved.`,
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      message: error.message,
+    });
+
+  }
+};

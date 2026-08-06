@@ -205,7 +205,7 @@ export const generateSchedule = async (week) => {
         level,
         course: selectedCourse._id,
         lecturer: lecturer._id,
-        status: "PENDING",
+        status: "DRAFT",
       });
 
       console.log(`Assigned ${lecturer.name} -> ${selectedCourse.code}`);

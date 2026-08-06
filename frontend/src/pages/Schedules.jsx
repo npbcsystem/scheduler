@@ -21,12 +21,19 @@ import {
   TableRow,
   TextField,
   Typography,
+  Snackbar
 } from "@mui/material";
 
 import RefreshIcon from "@mui/icons-material/Refresh";
 
-import { getSchedules } from "../services/scheduleService";
+import {
+  getSchedules,
+  approveWeek,
+  approveAll,
+} from "../services/scheduleService";
 import EditScheduleDialog from "../components/dialogs/EditScheduleDialog";
+
+
 
 export default function Schedules() {
   const [loading, setLoading] = useState(true);
@@ -43,6 +50,11 @@ export default function Schedules() {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const [selectedSchedule, setSelectedSchedule] = useState(null);
+
+  // state variables
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState("success");
 
   //--------------------------------------------------
   // Load schedules
@@ -84,6 +96,42 @@ export default function Schedules() {
   // Filter schedules
   //--------------------------------------------------
 
+  const handleApproveWeek = async () => {
+    try {
+      if (weekFilter === "ALL") {
+        alert("Please select a specific week first.");
+        return;
+      }
+
+      const result = await approveWeek(weekFilter);
+
+      // alert(result.message);
+      setSnackbarMessage(result.message);
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
+
+      loadSchedules();
+    } catch (error) {
+      console.error(error);
+
+      alert("Unable to approve schedules.");
+    }
+  };
+
+  const handleApproveAll = async () => {
+    try {
+      const result = await approveAll();
+
+      alert(result.message);
+
+      loadSchedules();
+    } catch (error) {
+      console.error(error);
+
+      alert("Unable to approve schedules.");
+    }
+  };
+
   const filteredSchedules = schedules.filter((schedule) => {
     const matchesWeek =
       weekFilter === "ALL" || schedule.week === Number(weekFilter);
@@ -104,6 +152,12 @@ export default function Schedules() {
 
   const statusColor = (status) => {
     switch (status) {
+      case "DRAFT":
+        return "warning";
+
+      case "APPROVED":
+        return "info";
+
       case "COMPLETED":
         return "success";
 
@@ -111,7 +165,7 @@ export default function Schedules() {
         return "error";
 
       default:
-        return "warning";
+        return "default";
     }
   };
 
@@ -128,6 +182,18 @@ export default function Schedules() {
         <Typography variant="h4" fontWeight="bold">
           Schedule Management
         </Typography>
+
+        <Button variant="contained" color="success" onClick={handleApproveWeek}>
+          Approve Week
+        </Button>
+
+        <Button
+          variant="contained"
+          color="secondary"
+          onClick={handleApproveAll}
+        >
+          Approve All
+        </Button>
 
         <Button
           variant="contained"
@@ -289,4 +355,19 @@ export default function Schedules() {
       />
     </Container>
   );
+<Snackbar
+  open={snackbarOpen}
+  autoHideDuration={3000}
+  onClose={() => setSnackbarOpen(false)}
+  anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+>
+  <Alert
+    severity={snackbarSeverity}
+    onClose={() => setSnackbarOpen(false)}
+    variant="filled"
+  >
+    {snackbarMessage}
+  </Alert>
+</Snackbar>
 }
+

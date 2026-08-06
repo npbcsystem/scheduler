@@ -10,35 +10,28 @@ const scheduleSchema = new mongoose.Schema(
 
     branch: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Branch"
+      ref: "Branch",
     },
 
     level: String,
 
     course: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Course"
+      ref: "Course",
     },
 
     lecturer: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Lecturer"
+      ref: "Lecturer",
     },
 
     status: {
       type: String,
-      enum: [
-        "PENDING",
-        "COMPLETED",
-        "CANCELLED"
-      ],
-      default: "PENDING"
-    }
+      enum: ["DRAFT", "APPROVED", "COMPLETED", "CANCELLED"],
+      default: "DRAFT",
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-export default mongoose.model(
-  "Schedule",
-  scheduleSchema
-);
+export default mongoose.model("Schedule", scheduleSchema);

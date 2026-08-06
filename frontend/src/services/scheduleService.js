@@ -19,3 +19,23 @@ export const updateSchedule = async (id, schedule) => {
 
   return data;
 };
+
+export const approveWeek = async (week) => {
+
+    const { data } = await api.put(
+        `/schedule/approve/week/${week}`
+    );
+
+    return data;
+
+};
+
+export const approveAll = async () => {
+
+    const { data } = await api.put(
+        "/schedule/approve/all"
+    );
+
+    return data;
+
+};

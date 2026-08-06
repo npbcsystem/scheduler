@@ -67,11 +67,11 @@ export default function Schedules() {
   useEffect(() => {
     loadSchedules();
 
-    const interval = setInterval(() => {
-      loadSchedules();
-    }, 5000);
+    // const interval = setInterval(() => {
+    //   loadSchedules();
+    // }, 10000);
 
-    return () => clearInterval(interval);
+    // return () => clearInterval(interval);
   }, []);
 
   //--------------------------------------------------
@@ -211,6 +211,9 @@ export default function Schedules() {
                   <TableCell>
                     <b>Status</b>
                   </TableCell>
+                  <TableCell align="center">
+                    <b>Actions</b>
+                  </TableCell>
                 </TableRow>
               </TableHead>
 
@@ -250,6 +253,11 @@ export default function Schedules() {
                           color={statusColor(schedule.status)}
                           size="small"
                         />
+                      </TableCell>
+                      <TableCell align="center">
+                        <Button variant="outlined" size="small">
+                          Edit
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))

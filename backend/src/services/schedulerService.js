@@ -9,11 +9,7 @@ import Schedule from "../models/Schedule.js";
  * Find the best available lecturer
  * ----------------------------------------------------
  */
-const findAvailableLecturers = async (
-  courseId,
-  region,
-  usedLecturers
-) => {
+const findAvailableLecturers = async (courseId, region, usedLecturers) => {
   const searches = [
     {
       title: "Preferred Region",
@@ -46,32 +42,26 @@ const findAvailableLecturers = async (
     console.log(`\n${search.title}`);
     console.log(
       "Found:",
-      lecturers.map((l) => l.name)
+      lecturers.map((l) => l.name),
     );
 
-    lecturers = lecturers.filter(
-      (l) => !usedLecturers.has(l._id.toString())
-    );
+    lecturers = lecturers.filter((l) => !usedLecturers.has(l._id.toString()));
 
     console.log(
       "After Used Filter:",
-      lecturers.map((l) => l.name)
+      lecturers.map((l) => l.name),
     );
 
     lecturers = lecturers.filter(
-      (l) =>
-        l.currentAssignments < l.maxAssignmentsPerMonth
+      (l) => l.currentAssignments < l.maxAssignmentsPerMonth,
     );
 
     console.log(
       "After Workload Filter:",
-      lecturers.map((l) => l.name)
+      lecturers.map((l) => l.name),
     );
 
-    lecturers.sort(
-      (a, b) =>
-        a.currentAssignments - b.currentAssignments
-    );
+    lecturers.sort((a, b) => a.currentAssignments - b.currentAssignments);
 
     if (lecturers.length > 0) {
       return lecturers;
@@ -91,25 +81,18 @@ export const generateSchedule = async (week) => {
   const month = new Date().getMonth() + 1;
 
   // Reset workload
-  await Lecturer.updateMany(
-    {},
-    { currentAssignments: 0 }
-  );
+  await Lecturer.updateMany({}, { currentAssignments: 0 });
 
   const usedLecturers = new Set();
 
   const branches = await Branch.find({ week });
 
-  console.log(
-    `Found ${branches.length} branches for Week ${week}`
-  );
+  console.log(`Found ${branches.length} branches for Week ${week}`);
 
   let schedulesCreated = 0;
 
   for (const branch of branches) {
-    console.log(
-      `\n========== ${branch.name} ==========`
-    );
+    console.log(`\n========== ${branch.name} ==========`);
 
     for (const level of branch.levels) {
       console.log(`Processing ${level}`);
@@ -162,16 +145,14 @@ export const generateSchedule = async (week) => {
       }).sort({ code: 1 });
 
       if (!remainingCourses.length) {
-        console.log(
-          `All ${level} courses completed.`
-        );
+        console.log(`All ${level} courses completed.`);
         continue;
       }
 
       const selectedCourse = remainingCourses[0];
 
       console.log(
-        `Selected Course: ${selectedCourse.code} - ${selectedCourse.name}`
+        `Selected Course: ${selectedCourse.code} - ${selectedCourse.name}`,
       );
 
       console.log("\n==============================");
@@ -184,22 +165,19 @@ export const generateSchedule = async (week) => {
       // Lecturer Selection
       //------------------------------------------------
 
-      const lecturers =
-        await findAvailableLecturers(
-          selectedCourse._id,
-          branch.region,
-          usedLecturers
-        );
+      const lecturers = await findAvailableLecturers(
+        selectedCourse._id,
+        branch.region,
+        usedLecturers,
+      );
 
       console.log(
         "Matching Lecturers:",
-        lecturers.map((l) => l.name)
+        lecturers.map((l) => l.name),
       );
 
       if (!lecturers.length) {
-        console.log(
-          `No lecturer available for ${branch.name} (${level})`
-        );
+        console.log(`No lecturer available for ${branch.name} (${level})`);
         continue;
       }
 
@@ -213,9 +191,7 @@ export const generateSchedule = async (week) => {
 
       await lecturer.save();
 
-      usedLecturers.add(
-        lecturer._id.toString()
-      );
+      usedLecturers.add(lecturer._id.toString());
 
       //------------------------------------------------
       // Save Schedule
@@ -232,20 +208,27 @@ export const generateSchedule = async (week) => {
         status: "PENDING",
       });
 
-      console.log(
-        `Assigned ${lecturer.name} -> ${selectedCourse.code}`
-      );
+      console.log(`Assigned ${lecturer.name} -> ${selectedCourse.code}`);
 
       schedulesCreated++;
     }
   }
 
   console.log(
-    `\nSchedule generation complete. ${schedulesCreated} schedules created.`
+    `\nSchedule generation complete. ${schedulesCreated} schedules created.`,
   );
 
   return {
     success: true,
+
+    week,
+
+    month,
+
+    year,
+
     schedulesCreated,
+
+    message: `${schedulesCreated} schedules generated successfully.`,
   };
 };

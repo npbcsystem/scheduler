@@ -26,6 +26,7 @@ import {
 import RefreshIcon from "@mui/icons-material/Refresh";
 
 import { getSchedules } from "../services/scheduleService";
+import EditScheduleDialog from "../components/dialogs/EditScheduleDialog";
 
 export default function Schedules() {
   const [loading, setLoading] = useState(true);
@@ -37,6 +38,11 @@ export default function Schedules() {
   const [search, setSearch] = useState("");
 
   const [weekFilter, setWeekFilter] = useState("ALL");
+
+  // dialog state
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const [selectedSchedule, setSelectedSchedule] = useState(null);
 
   //--------------------------------------------------
   // Load schedules
@@ -255,7 +261,15 @@ export default function Schedules() {
                         />
                       </TableCell>
                       <TableCell align="center">
-                        <Button variant="outlined" size="small">
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          onClick={() => {
+                            setSelectedSchedule(schedule);
+
+                            setDialogOpen(true);
+                          }}
+                        >
                           Edit
                         </Button>
                       </TableCell>
@@ -267,6 +281,12 @@ export default function Schedules() {
           </TableContainer>
         )}
       </Paper>
+      <EditScheduleDialog
+        open={dialogOpen}
+        schedule={selectedSchedule}
+        onClose={() => setDialogOpen(false)}
+        onUpdated={loadSchedules}
+      />
     </Container>
   );
 }

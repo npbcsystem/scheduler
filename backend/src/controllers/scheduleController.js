@@ -1,5 +1,6 @@
 import { generateSchedule } from "../services/schedulerService.js";
 import Schedule from "../models/Schedule.js";
+import Lecturer from "../models/Lecturer.js";
 
 export const generate = async (req, res) => {
   try {
@@ -17,64 +18,109 @@ export const generate = async (req, res) => {
 
 export const getSchedules = async (req, res) => {
   try {
-
     const schedules = await Schedule.find()
       .populate("branch")
       .populate("course")
       .populate("lecturer");
 
     res.json(schedules);
-
   } catch (error) {
-
     res.status(500).json({
-      message: error.message
+      message: error.message,
     });
-
   }
 };
 
 // update lecturer's current assignments
 export const updateSchedule = async (req, res) => {
+  try {
 
-    try {
+    const { lecturer, status } = req.body;
 
-        const schedule =
-            await Schedule.findById(
-                req.params.id
-            );
+    const schedule = await Schedule.findById(req.params.id);
 
-        if (!schedule) {
+    if (!schedule) {
+      return res.status(404).json({
+        message: "Schedule not found",
+      });
+    }
 
-            return res.status(404).json({
+    //----------------------------------------------------
+    // Lecturer changed?
+    //----------------------------------------------------
 
-                message:
-                    "Schedule not found"
+    if (
+      lecturer &&
+      lecturer !== schedule.lecturer.toString()
+    ) {
 
-            });
+      //--------------------------------------------------
+      // Old lecturer
+      //--------------------------------------------------
 
-        }
+      const oldLecturer = await Lecturer.findById(
+        schedule.lecturer
+      );
 
-        schedule.lecturer =
-            req.body.lecturer;
+      if (oldLecturer) {
 
-        schedule.status =
-            req.body.status;
+        oldLecturer.currentAssignments = Math.max(
+          0,
+          oldLecturer.currentAssignments - 1
+        );
 
-        await schedule.save();
+        await oldLecturer.save();
 
-        res.json(schedule);
+      }
+
+      //--------------------------------------------------
+      // New lecturer
+      //--------------------------------------------------
+
+      const newLecturer = await Lecturer.findById(
+        lecturer
+      );
+
+      if (newLecturer) {
+
+        newLecturer.currentAssignments++;
+
+        await newLecturer.save();
+
+      }
+
+      schedule.lecturer = lecturer;
 
     }
 
-    catch (error) {
+    //----------------------------------------------------
+    // Status
+    //----------------------------------------------------
 
-        res.status(500).json({
+    if (status) {
 
-            message:error.message
-
-        });
+      schedule.status = status;
 
     }
 
+    await schedule.save();
+
+    const updated = await Schedule.findById(schedule._id)
+      .populate("branch")
+      .populate("course")
+      .populate("lecturer");
+
+    res.json(updated);
+
+  } catch (error) {
+
+     console.error("UPDATE SCHEDULE ERROR");
+    console.error(error);
+
+    res.status(500).json({
+        message: error.message,
+        stack: error.stack
+    });
+
+  }
 };

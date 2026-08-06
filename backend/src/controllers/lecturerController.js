@@ -90,3 +90,26 @@ export const deleteLecturer = async (
     });
   }
 };
+
+// get lecturers by course
+
+export const getLecturersByCourse = async (req, res) => {
+  try {
+    const lecturers = await Lecturer.find({
+      active: true,
+      courses: req.params.courseId,
+    }).sort({
+      currentAssignments: 1,
+      name: 1,
+    });
+
+    res.json(lecturers);
+
+  } catch (error) {
+
+    res.status(500).json({
+      message: error.message,
+    });
+
+  }
+};

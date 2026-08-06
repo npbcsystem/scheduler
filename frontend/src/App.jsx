@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import CssBaseline from "@mui/material/CssBaseline";
 
 import Layout from "./components/layout/Layout";
-
 import Dashboard from "./pages/Dashboard";
 import Generate from "./pages/Generate";
 import Schedules from "./pages/Schedules";
@@ -11,61 +11,23 @@ import Courses from "./pages/Courses";
 import Progress from "./pages/Progress";
 import Reports from "./pages/Reports";
 
-function App() {
+export default function App() {
   return (
     <BrowserRouter>
+      <CssBaseline />
       <Routes>
-
         <Route path="/" element={<Layout />}>
-
-          {/* Default Page */}
           <Route index element={<Schedules />} />
-
-          <Route
-            path="dashboard"
-            element={<Dashboard />}
-          />
-
-          <Route
-            path="generate"
-            element={<Generate />}
-          />
-
-          <Route
-            path="schedules"
-            element={<Schedules />}
-          />
-
-          <Route
-            path="branches"
-            element={<Branches />}
-          />
-
-          <Route
-            path="lecturers"
-            element={<Lecturers />}
-          />
-
-          <Route
-            path="courses"
-            element={<Courses />}
-          />
-
-          <Route
-            path="progress"
-            element={<Progress />}
-          />
-
-          <Route
-            path="reports"
-            element={<Reports />}
-          />
-
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="generate" element={<Generate />} />
+          <Route path="schedules" element={<Schedules />} />
+          <Route path="branches" element={<Branches />} />
+          <Route path="lecturers" element={<Lecturers />} />
+          <Route path="courses" element={<Courses />} />
+          <Route path="progress" element={<Progress />} />
+          <Route path="reports" element={<Reports />} />
         </Route>
-
       </Routes>
     </BrowserRouter>
   );
 }
-
-export default App;

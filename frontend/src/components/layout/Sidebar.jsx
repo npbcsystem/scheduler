@@ -1,5 +1,4 @@
 import {
-  Drawer,
   Toolbar,
   List,
   ListItemButton,
@@ -20,79 +19,35 @@ import AssessmentIcon from "@mui/icons-material/Assessment";
 
 import { NavLink } from "react-router-dom";
 
-const drawerWidth = 250;
-
 const menuItems = [
-  {
-    text: "Dashboard",
-    path: "/dashboard",
-    icon: <DashboardIcon />,
-  },
-  {
-    text: "Generate Schedule",
-    path: "/generate",
-    icon: <AutoAwesomeIcon />,
-  },
-  {
-    text: "Schedules",
-    path: "/schedules",
-    icon: <EventIcon />,
-  },
-  {
-    text: "Branches",
-    path: "/branches",
-    icon: <BusinessIcon />,
-  },
-  {
-    text: "Lecturers",
-    path: "/lecturers",
-    icon: <SchoolIcon />,
-  },
-  {
-    text: "Courses",
-    path: "/courses",
-    icon: <MenuBookIcon />,
-  },
-  {
-    text: "Progress",
-    path: "/progress",
-    icon: <TimelineIcon />,
-  },
-  {
-    text: "Reports",
-    path: "/reports",
-    icon: <AssessmentIcon />,
-  },
+  { text: "Dashboard", path: "/dashboard", icon: <DashboardIcon /> },
+  { text: "Generate Schedule", path: "/generate", icon: <AutoAwesomeIcon /> },
+  { text: "Schedules", path: "/schedules", icon: <EventIcon /> },
+  { text: "Branches", path: "/branches", icon: <BusinessIcon /> },
+  { text: "Lecturers", path: "/lecturers", icon: <SchoolIcon /> },
+  { text: "Courses", path: "/courses", icon: <MenuBookIcon /> },
+  { text: "Progress", path: "/progress", icon: <TimelineIcon /> },
+  { text: "Reports", path: "/reports", icon: <AssessmentIcon /> },
 ];
 
 export default function Sidebar() {
   return (
-    <Drawer
-      variant="permanent"
+    <Box
+      component="nav"
       sx={{
-        width: drawerWidth,
+        width: 250,
         flexShrink: 0,
-        "& .MuiDrawer-paper": {
-          width: drawerWidth,
-          boxSizing: "border-box",
-          background: "#0F172A",
-          color: "#fff",
-        },
+        backgroundColor: "#0F172A",
+        color: "#fff",
+        minHeight: "100vh",
       }}
     >
       <Toolbar>
         <Box>
-          <Typography
-            variant="h6"
-            fontWeight="bold"
-          >
+          <Typography variant="h6" fontWeight="bold">
             NPBC Scheduler
           </Typography>
-
-          <Typography
-            variant="body2"
-            color="gray"
-          >
+          <Typography variant="body2" color="gray">
             Academic Management
           </Typography>
         </Box>
@@ -114,18 +69,13 @@ export default function Sidebar() {
               },
             }}
           >
-            <ListItemIcon
-              sx={{ color: "white" }}
-            >
+            <ListItemIcon sx={{ color: "white" }}>
               {item.icon}
             </ListItemIcon>
-
-            <ListItemText
-              primary={item.text}
-            />
+            <ListItemText primary={item.text} />
           </ListItemButton>
         ))}
       </List>
-    </Drawer>
+    </Box>
   );
 }

@@ -31,6 +31,8 @@ export default function Generate() {
 
   const [error, setError] = useState("");
 
+  const [summary, setSummary] = useState(null);
+
   const handleGenerate = async () => {
 
     try {
@@ -43,13 +45,9 @@ export default function Generate() {
 
       const result = await generateSchedule(week);
 
+      setSummary(result);
+
       setSuccess(result.message);
-
-      setTimeout(() => {
-
-        navigate("/schedules");
-
-      }, 1500);
 
     }
 
@@ -172,6 +170,97 @@ export default function Generate() {
                 : "Generate Schedule"}
 
             </Button>
+            {summary && (
+
+<Card sx={{ mt:4 }}>
+
+<CardContent>
+
+<Typography variant="h6">
+
+Generation Summary
+
+</Typography>
+
+<Typography>
+
+Expected Classes: {summary.totalClasses}
+
+</Typography>
+
+<Typography>
+
+Schedules Created: {summary.schedulesCreated}
+
+</Typography>
+
+<Typography color="error">
+
+Unassigned: {summary.unassigned.length}
+
+</Typography>
+
+</CardContent>
+
+</Card>
+
+)}
+
+{summary?.unassigned?.length > 0 && (
+
+<Card sx={{ mt:3 }}>
+
+<CardContent>
+
+<Typography
+variant="h6"
+color="error"
+>
+
+Unassigned Classes
+
+</Typography>
+
+{summary.unassigned.map((item,index)=>(
+
+<Box
+key={index}
+sx={{mb:2}}
+>
+
+<Typography fontWeight="bold">
+
+{item.branchName}
+
+</Typography>
+
+<Typography>
+
+{item.level}
+
+</Typography>
+
+<Typography>
+
+{item.courseCode}
+
+</Typography>
+
+<Typography>
+
+{item.courseName}
+
+</Typography>
+
+</Box>
+
+))}
+
+</CardContent>
+
+</Card>
+
+)}
 
           </Stack>
 

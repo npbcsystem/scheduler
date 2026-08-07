@@ -80,6 +80,11 @@ export const generateSchedule = async (week) => {
   const year = new Date().getFullYear();
   const month = new Date().getMonth() + 1;
 
+  const schedule = [];
+
+  const unassigned = [];
+
+  let totalClasses = 0;
   // Reset workload
   await Lecturer.updateMany({}, { currentAssignments: 0 });
 
@@ -149,7 +154,10 @@ export const generateSchedule = async (week) => {
         continue;
       }
 
-      const selectedCourse = remainingCourses[0];
+      totalClasses++;
+
+      const randomIndex = Math.floor(Math.random() * remainingCourses.length);
+      const selectedCourse = remainingCourses[randomIndex];
 
       console.log(
         `Selected Course: ${selectedCourse.code} - ${selectedCourse.name}`,
@@ -176,8 +184,27 @@ export const generateSchedule = async (week) => {
         lecturers.map((l) => l.name),
       );
 
-      if (!lecturers.length) {
-        console.log(`No lecturer available for ${branch.name} (${level})`);
+      if (lecturers.length === 0) {
+        console.log("No lecturer found.");
+
+        unassigned.push({
+          branch: branch._id,
+
+          branchName: branch.name,
+
+          region: branch.region,
+
+          level,
+
+          course: selectedCourse._id,
+
+          courseCode: selectedCourse.code,
+
+          courseName: selectedCourse.name,
+
+          reason: "No lecturer available",
+        });
+
         continue;
       }
 
@@ -218,7 +245,8 @@ export const generateSchedule = async (week) => {
     `\nSchedule generation complete. ${schedulesCreated} schedules created.`,
   );
 
-  return {
+ return {
+
     success: true,
 
     week,
@@ -227,8 +255,13 @@ export const generateSchedule = async (week) => {
 
     year,
 
-    schedulesCreated,
+    totalClasses,
 
-    message: `${schedulesCreated} schedules generated successfully.`,
-  };
+    schedulesCreated: schedule.length,
+
+    unassigned,
+
+    schedules: schedule
+
+};
 };

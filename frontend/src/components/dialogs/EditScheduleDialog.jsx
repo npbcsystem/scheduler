@@ -140,8 +140,8 @@ export default function EditScheduleDialog({
               value={status}
               onChange={(e) => setStatus(e.target.value)}
             >
-              <MenuItem value="PENDING">Pending</MenuItem>
-
+              <MenuItem value="DRAFT">Draft</MenuItem>
+              <MenuItem value="APPROVED">Approved</MenuItem>
               <MenuItem value="COMPLETED">Completed</MenuItem>
 
               <MenuItem value="CANCELLED">Cancelled</MenuItem>

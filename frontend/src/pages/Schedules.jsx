@@ -317,7 +317,15 @@ export default function Schedules() {
                         </Typography>
                       </TableCell>
 
-                      <TableCell>{schedule.lecturer?.name}</TableCell>
+                      <TableCell>
+                        <Typography variant="body2" color="text.secondary">
+                          {schedule.lecturer?.name}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {schedule.lecturer?.phone}
+                        </Typography>
+                        
+                        </TableCell>
 
                       <TableCell>
                         <Chip

@@ -30,6 +30,11 @@ const scheduleSchema = new mongoose.Schema(
       enum: ["DRAFT", "APPROVED", "COMPLETED", "CANCELLED"],
       default: "DRAFT",
     },
+    source: {
+      type: String,
+      enum: ["AUTO", "MANUAL"],
+      default: "AUTO",
+    },
   },
   { timestamps: true },
 );

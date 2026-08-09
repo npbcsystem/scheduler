@@ -16,9 +16,10 @@ import {
 
 import {
   getLecturers,
-  getLecturersByCourse
+  getLecturersByCourse,
 } from "../../services/lecturerService";
 import { updateSchedule } from "../../services/scheduleService";
+import { getRemainingCourses } from "../../services/progressService";
 
 export default function EditScheduleDialog({
   open,
@@ -34,12 +35,22 @@ export default function EditScheduleDialog({
 
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (schedule) {
-      setSelectedLecturer(schedule.lecturer?._id);
+  const [courses, setCourses] = useState([]);
 
-      setStatus(schedule.status);
-    }
+  const [selectedCourse, setSelectedCourse] = useState("");
+
+  useEffect(() => {
+    if (!schedule) return;
+
+    loadCourses();
+
+    loadLecturers(schedule.course._id);
+
+    setSelectedCourse(schedule.course._id);
+
+    setSelectedLecturer(schedule.lecturer._id);
+
+    setStatus(schedule.status);
   }, [schedule]);
 
   //   load lecturer by course
@@ -54,24 +65,34 @@ export default function EditScheduleDialog({
   }, [schedule]);
 
   const loadLecturers = async (courseId) => {
-  try {
+    try {
+      const data = await getLecturersByCourse(courseId);
 
-    const data = await getLecturersByCourse(courseId);
+      setLecturers(data);
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
-    setLecturers(data);
+  const loadCourses = async () => {
+    try {
+      const data = await getRemainingCourses(
+        schedule.branch._id,
+        schedule.level,
+      );
 
-  } catch (err) {
-
-    console.log(err);
-
-  }
-};
+      setCourses(data);
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
   const handleSave = async () => {
     try {
       setSaving(true);
 
       await updateSchedule(schedule._id, {
+        course: selectedCourse,
         lecturer: selectedLecturer,
         status,
       });
@@ -105,6 +126,28 @@ export default function EditScheduleDialog({
           <Typography>
             <strong>Level:</strong> {schedule.level}
           </Typography>
+
+          <FormControl fullWidth>
+            <InputLabel>Course</InputLabel>
+
+            <Select
+              label="Course"
+              value={selectedCourse}
+              onChange={async (e) => {
+                const value = e.target.value;
+
+                setSelectedCourse(value);
+
+                await loadLecturers(value);
+              }}
+            >
+              {courses.map((course) => (
+                <MenuItem key={course._id} value={course._id}>
+                  {course.code} - {course.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
 
           <FormControl fullWidth>
             <InputLabel>Lecturer</InputLabel>

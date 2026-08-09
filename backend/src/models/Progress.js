@@ -5,32 +5,50 @@ const progressSchema = new mongoose.Schema(
     branch: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Branch",
-      required: true
+      required: true,
     },
 
     level: {
       type: String,
-      enum: [
-        "CERTIFICATE",
-        "ASSOCIATE",
-        "DIPLOMA"
-      ],
-      required: true
+      enum: ["CERTIFICATE", "ASSOCIATE", "DIPLOMA"],
+      required: true,
     },
 
     completedCourses: [
       {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Course"
-      }
-    ]
+        course: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Course",
+          required: true,
+        },
+
+        completedDate: {
+          type: Date,
+          default: Date.now,
+        },
+
+        lecturer: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Lecturer",
+        },
+
+        schedule: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Schedule",
+        },
+
+        manuallyCompleted: {
+          type: Boolean,
+          default: false,
+        },
+
+        notes: String,
+      },
+    ],
   },
   {
-    timestamps: true
-  }
+    timestamps: true,
+  },
 );
 
-export default mongoose.model(
-  "Progress",
-  progressSchema
-);
+export default mongoose.model("Progress", progressSchema);

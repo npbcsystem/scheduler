@@ -34,8 +34,7 @@ export const getSchedules = async (req, res) => {
 // update lecturer's current assignments
 export const updateSchedule = async (req, res) => {
   try {
-
-    const { lecturer, status } = req.body;
+    const { course, lecturer, status } = req.body;
 
     const schedule = await Schedule.findById(req.params.id);
 
@@ -46,51 +45,46 @@ export const updateSchedule = async (req, res) => {
     }
 
     //----------------------------------------------------
+    // Course changed?
+    //----------------------------------------------------
+
+    if (course && course !== schedule.course.toString()) {
+      schedule.course = course;
+    }
+
+    //----------------------------------------------------
     // Lecturer changed?
     //----------------------------------------------------
 
-    if (
-      lecturer &&
-      lecturer !== schedule.lecturer.toString()
-    ) {
-
+    if (lecturer && lecturer !== schedule.lecturer.toString()) {
       //--------------------------------------------------
       // Old lecturer
       //--------------------------------------------------
 
-      const oldLecturer = await Lecturer.findById(
-        schedule.lecturer
-      );
+      const oldLecturer = await Lecturer.findById(schedule.lecturer);
 
       if (oldLecturer) {
-
         oldLecturer.currentAssignments = Math.max(
           0,
-          oldLecturer.currentAssignments - 1
+          oldLecturer.currentAssignments - 1,
         );
 
         await oldLecturer.save();
-
       }
 
       //--------------------------------------------------
       // New lecturer
       //--------------------------------------------------
 
-      const newLecturer = await Lecturer.findById(
-        lecturer
-      );
+      const newLecturer = await Lecturer.findById(lecturer);
 
       if (newLecturer) {
-
         newLecturer.currentAssignments++;
 
         await newLecturer.save();
-
       }
 
       schedule.lecturer = lecturer;
-
     }
 
     //----------------------------------------------------
@@ -98,9 +92,7 @@ export const updateSchedule = async (req, res) => {
     //----------------------------------------------------
 
     if (status) {
-
       schedule.status = status;
-
     }
 
     await schedule.save();
@@ -111,23 +103,33 @@ export const updateSchedule = async (req, res) => {
       .populate("lecturer");
 
     res.json(updated);
-
   } catch (error) {
-
-     console.error("UPDATE SCHEDULE ERROR");
+    console.error("UPDATE SCHEDULE ERROR");
     console.error(error);
 
     res.status(500).json({
-        message: error.message,
-        stack: error.stack
+      message: error.message,
+      stack: error.stack,
     });
-
   }
+
+  const lecturerDoc = await Lecturer.findById(lecturer);
+
+if (
+  course &&
+  lecturer &&
+  !lecturerDoc.courses.some(
+    (c) => c.toString() === course
+  )
+) {
+  return res.status(400).json({
+    message: "Selected lecturer cannot teach this course.",
+  });
+}
 };
 
 export const approveWeek = async (req, res) => {
   try {
-
     const week = Number(req.params.week);
 
     const result = await Schedule.updateMany(
@@ -137,7 +139,7 @@ export const approveWeek = async (req, res) => {
       },
       {
         status: "APPROVED",
-      }
+      },
     );
 
     res.json({
@@ -146,26 +148,22 @@ export const approveWeek = async (req, res) => {
       modified: result.modifiedCount,
       message: `${result.modifiedCount} schedules approved.`,
     });
-
   } catch (error) {
-
     res.status(500).json({
       message: error.message,
     });
-
   }
 };
 
 export const approveAll = async (req, res) => {
   try {
-
     const result = await Schedule.updateMany(
       {
         status: "DRAFT",
       },
       {
         status: "APPROVED",
-      }
+      },
     );
 
     res.json({
@@ -173,12 +171,9 @@ export const approveAll = async (req, res) => {
       modified: result.modifiedCount,
       message: `${result.modifiedCount} schedules approved.`,
     });
-
   } catch (error) {
-
     res.status(500).json({
       message: error.message,
     });
-
   }
 };

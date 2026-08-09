@@ -3,6 +3,7 @@ import Course from "../models/Course.js";
 import Lecturer from "../models/Lecturer.js";
 import Progress from "../models/Progress.js";
 import Schedule from "../models/Schedule.js";
+import PendingAssignment from "../models/PendingAssignment.js";
 
 /**
  * ----------------------------------------------------
@@ -80,11 +81,15 @@ export const generateSchedule = async (week) => {
   const year = new Date().getFullYear();
   const month = new Date().getMonth() + 1;
 
-  const schedule = [];
-
   const unassigned = [];
 
   let totalClasses = 0;
+
+  await PendingAssignment.deleteMany({
+    week,
+    month,
+    year,
+  });
   // Reset workload
   await Lecturer.updateMany({}, { currentAssignments: 0 });
 
@@ -142,10 +147,14 @@ export const generateSchedule = async (week) => {
       // Remaining Course
       //------------------------------------------------
 
+      const completedCourseIds = progress.completedCourses.map(
+        (item) => item.course,
+      );
+
       const remainingCourses = await Course.find({
         level,
         _id: {
-          $nin: progress.completedCourses,
+          $nin: completedCourseIds,
         },
       }).sort({ code: 1 });
 
@@ -156,8 +165,7 @@ export const generateSchedule = async (week) => {
 
       totalClasses++;
 
-      const randomIndex = Math.floor(Math.random() * remainingCourses.length);
-      const selectedCourse = remainingCourses[randomIndex];
+      const selectedCourse = remainingCourses[0];
 
       console.log(
         `Selected Course: ${selectedCourse.code} - ${selectedCourse.name}`,
@@ -187,22 +195,21 @@ export const generateSchedule = async (week) => {
       if (lecturers.length === 0) {
         console.log("No lecturer found.");
 
-        unassigned.push({
+        await PendingAssignment.create({
+          year,
+          month,
+          week,
           branch: branch._id,
-
-          branchName: branch.name,
-
-          region: branch.region,
-
           level,
-
-          course: selectedCourse._id,
-
-          courseCode: selectedCourse.code,
-
-          courseName: selectedCourse.name,
-
+          suggestedCourse: selectedCourse._id,
           reason: "No lecturer available",
+        });
+
+        unassigned.push({
+          branchName: branch.name,
+          level,
+          courseCode: selectedCourse.code,
+          courseName: selectedCourse.name,
         });
 
         continue;
@@ -245,8 +252,7 @@ export const generateSchedule = async (week) => {
     `\nSchedule generation complete. ${schedulesCreated} schedules created.`,
   );
 
- return {
-
+  return {
     success: true,
 
     week,
@@ -257,11 +263,10 @@ export const generateSchedule = async (week) => {
 
     totalClasses,
 
-    schedulesCreated: schedule.length,
+    schedulesCreated,
+
+    unassignedCount: unassigned.length,
 
     unassigned,
-
-    schedules: schedule
-
-};
+  };
 };

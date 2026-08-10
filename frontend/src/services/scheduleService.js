@@ -39,3 +39,19 @@ export const approveAll = async () => {
     return data;
 
 };
+
+export const completeWeek = async (week, month, year) => {
+  const response = await api.put(
+    `/schedule/complete/week/${week}?month=${month}&year=${year}`
+  );
+
+  return response.data;
+};
+
+export const completeMonth = async (month, year) => {
+  const response = await api.put(
+    `/schedule/complete/month/${month}?year=${year}`
+  );
+
+  return response.data;
+};

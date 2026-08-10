@@ -6,30 +6,53 @@ import Schedule from "../models/Schedule.js";
 import PendingAssignment from "../models/PendingAssignment.js";
 
 /**
- * ----------------------------------------------------
- * Find the best available lecturer
- * ----------------------------------------------------
+ * ---------------------------------------------------------
+ * Find available lecturers for a course
+ *
+ * Priority:
+ *
+ * 1. Preferred Region
+ * 2. Secondary Region
+ * 3. Any Region
+ *
+ * Also:
+ * - active lecturers only
+ * - lecturer cannot already be used in this generation
+ * - monthly workload must not be exceeded
+ * - lowest workload is preferred
+ * ---------------------------------------------------------
  */
-const findAvailableLecturers = async (courseId, region, usedLecturers) => {
+
+const findAvailableLecturers = async (
+  courseId,
+  region,
+  usedLecturers
+) => {
+
   const searches = [
     {
       title: "Preferred Region",
+
       filter: {
         active: true,
         courses: courseId,
         preferredRegions: region,
       },
     },
+
     {
       title: "Secondary Region",
+
       filter: {
         active: true,
         courses: courseId,
         secondaryRegions: region,
       },
     },
+
     {
       title: "Any Region",
+
       filter: {
         active: true,
         courses: courseId,
@@ -38,31 +61,56 @@ const findAvailableLecturers = async (courseId, region, usedLecturers) => {
   ];
 
   for (const search of searches) {
+
     let lecturers = await Lecturer.find(search.filter);
 
     console.log(`\n${search.title}`);
+
     console.log(
       "Found:",
-      lecturers.map((l) => l.name),
+      lecturers.map((l) => l.name)
     );
 
-    lecturers = lecturers.filter((l) => !usedLecturers.has(l._id.toString()));
+    // ----------------------------------------------------
+    // Remove lecturers already used during this generation
+    // ----------------------------------------------------
+
+    lecturers = lecturers.filter(
+      (lecturer) =>
+        !usedLecturers.has(
+          lecturer._id.toString()
+        )
+    );
 
     console.log(
       "After Used Filter:",
-      lecturers.map((l) => l.name),
+      lecturers.map((l) => l.name)
     );
 
+    // ----------------------------------------------------
+    // Respect monthly workload
+    // ----------------------------------------------------
+
     lecturers = lecturers.filter(
-      (l) => l.currentAssignments < l.maxAssignmentsPerMonth,
+      (lecturer) =>
+        lecturer.currentAssignments <
+        lecturer.maxAssignmentsPerMonth
     );
 
     console.log(
       "After Workload Filter:",
-      lecturers.map((l) => l.name),
+      lecturers.map((l) => l.name)
     );
 
-    lecturers.sort((a, b) => a.currentAssignments - b.currentAssignments);
+    // ----------------------------------------------------
+    // Lowest workload first
+    // ----------------------------------------------------
+
+    lecturers.sort(
+      (a, b) =>
+        a.currentAssignments -
+        b.currentAssignments
+    );
 
     if (lecturers.length > 0) {
       return lecturers;
@@ -73,186 +121,417 @@ const findAvailableLecturers = async (courseId, region, usedLecturers) => {
 };
 
 /**
- * ----------------------------------------------------
+ * ---------------------------------------------------------
  * Generate Schedule
- * ----------------------------------------------------
+ * ---------------------------------------------------------
  */
+
 export const generateSchedule = async (week) => {
+
   const year = new Date().getFullYear();
-  const month = new Date().getMonth() + 1;
+
+  const month =
+    new Date().getMonth() + 1;
 
   const unassigned = [];
 
-  let totalClasses = 0;
+  let expectedClasses = 0;
+
+  let schedulesCreated = 0;
+
+  // -------------------------------------------------------
+  // Remove old pending assignments for this period
+  // -------------------------------------------------------
 
   await PendingAssignment.deleteMany({
     week,
     month,
     year,
   });
-  // Reset workload
-  await Lecturer.updateMany({}, { currentAssignments: 0 });
+
+  // -------------------------------------------------------
+  // Reset lecturer workload for this generation
+  // -------------------------------------------------------
+
+  await Lecturer.updateMany(
+    {},
+    {
+      currentAssignments: 0,
+    }
+  );
 
   const usedLecturers = new Set();
 
-  const branches = await Branch.find({ week });
+  // -------------------------------------------------------
+  // Find branches scheduled for this week
+  // -------------------------------------------------------
 
-  console.log(`Found ${branches.length} branches for Week ${week}`);
+  const branches = await Branch.find({
+    week,
+  });
 
-  let schedulesCreated = 0;
+  console.log(
+    `Found ${branches.length} branches for Week ${week}`
+  );
+
+  // =======================================================
+  // PROCESS BRANCHES
+  // =======================================================
 
   for (const branch of branches) {
-    console.log(`\n========== ${branch.name} ==========`);
+
+    console.log(
+      `\n========== ${branch.name} ==========`
+    );
+
+    // =====================================================
+    // PROCESS LEVELS
+    // =====================================================
 
     for (const level of branch.levels) {
-      console.log(`Processing ${level}`);
 
-      //------------------------------------------------
-      // Existing Schedule?
-      //------------------------------------------------
+      console.log(
+        `Processing ${level}`
+      );
 
-      const existing = await Schedule.findOne({
-        branch: branch._id,
-        level,
-        week,
-        month,
-        year,
-      });
+      // ---------------------------------------------------
+      // Check whether schedule already exists
+      // ---------------------------------------------------
+
+      const existing =
+        await Schedule.findOne({
+          branch: branch._id,
+          level,
+          week,
+          month,
+          year,
+        });
 
       if (existing) {
-        console.log("Schedule already exists.");
+
+        console.log(
+          `Schedule already exists for ${branch.name} ${level}`
+        );
+
         continue;
       }
 
-      //------------------------------------------------
-      // Progress
-      //------------------------------------------------
+      // ---------------------------------------------------
+      // Find progress
+      // ---------------------------------------------------
 
-      let progress = await Progress.findOne({
-        branch: branch._id,
-        level,
-      });
+      let progress =
+        await Progress.findOne({
+          branch: branch._id,
+          level,
+        });
+
+      // ---------------------------------------------------
+      // Create progress if it doesn't exist
+      // ---------------------------------------------------
 
       if (!progress) {
-        progress = await Progress.create({
-          branch: branch._id,
-          level,
-          completedCourses: [],
-        });
 
-        console.log("Progress created.");
+        progress =
+          await Progress.create({
+            branch: branch._id,
+            level,
+            completedCourses: [],
+          });
+
+        console.log(
+          "Progress created."
+        );
       }
 
-      //------------------------------------------------
-      // Remaining Course
-      //------------------------------------------------
+      // ---------------------------------------------------
+      // Get completed course IDs
+      // ---------------------------------------------------
 
-      const completedCourseIds = progress.completedCourses.map(
-        (item) => item.course,
-      );
+      const completedCourseIds =
+        progress.completedCourses.map(
+          (item) =>
+            item.course
+        );
 
-      const remainingCourses = await Course.find({
-        level,
-        _id: {
-          $nin: completedCourseIds,
-        },
-      }).sort({ code: 1 });
+      // ---------------------------------------------------
+      // Find remaining courses
+      // ---------------------------------------------------
+
+      const remainingCourses =
+        await Course.find({
+          level,
+
+          _id: {
+            $nin: completedCourseIds,
+          },
+
+        }).sort({
+          code: 1,
+        });
+
+      // ---------------------------------------------------
+      // No courses remaining
+      // ---------------------------------------------------
 
       if (!remainingCourses.length) {
-        console.log(`All ${level} courses completed.`);
+
+        console.log(
+          `All ${level} courses completed.`
+        );
+
         continue;
       }
 
-      totalClasses++;
-
-      const selectedCourse = remainingCourses[0];
+      expectedClasses++;
 
       console.log(
-        `Selected Course: ${selectedCourse.code} - ${selectedCourse.name}`,
+        `Remaining courses: ${remainingCourses.length}`
       );
 
-      console.log("\n==============================");
-      console.log("Branch:", branch.name);
-      console.log("Region:", branch.region);
-      console.log("Course:", selectedCourse.code);
-      console.log("==============================");
+      // ===================================================
+      // SMART COURSE SELECTION
+      // ===================================================
 
-      //------------------------------------------------
-      // Lecturer Selection
-      //------------------------------------------------
+      let selectedCourse = null;
 
-      const lecturers = await findAvailableLecturers(
-        selectedCourse._id,
-        branch.region,
-        usedLecturers,
+      let selectedLecturer = null;
+
+      console.log(
+        "\n=============================="
       );
 
       console.log(
-        "Matching Lecturers:",
-        lecturers.map((l) => l.name),
+        "Branch:",
+        branch.name
       );
 
-      if (lecturers.length === 0) {
-        console.log("No lecturer found.");
+      console.log(
+        "Region:",
+        branch.region
+      );
+
+      console.log(
+        "Level:",
+        level
+      );
+
+      console.log(
+        "=============================="
+      );
+
+      // ---------------------------------------------------
+      // Try every remaining course
+      // until we find one with a lecturer
+      // ---------------------------------------------------
+
+      for (
+        const course
+        of remainingCourses
+      ) {
+
+        console.log(
+          `\nTrying course: ${course.code} - ${course.name}`
+        );
+
+        const lecturers =
+          await findAvailableLecturers(
+            course._id,
+            branch.region,
+            usedLecturers
+          );
+
+        console.log(
+          `Lecturers available for ${course.code}:`,
+          lecturers.map(
+            (l) => l.name
+          )
+        );
+
+        if (
+          lecturers.length > 0
+        ) {
+
+          selectedCourse =
+            course;
+
+          selectedLecturer =
+            lecturers[0];
+
+          console.log(
+            `SELECTED: ${course.code} -> ${selectedLecturer.name}`
+          );
+
+          break;
+        }
+
+        console.log(
+          `No available lecturer for ${course.code}`
+        );
+      }
+
+      // ===================================================
+      // NO COURSE + LECTURER FOUND
+      // ===================================================
+
+      if (
+        !selectedCourse ||
+        !selectedLecturer
+      ) {
+
+        console.log(
+          `No lecturer available for ANY remaining course for ${branch.name} (${level})`
+        );
+
+        const suggestedCourse =
+          remainingCourses[0];
+
+        // -------------------------------------------------
+        // Create pending assignment
+        // -------------------------------------------------
 
         await PendingAssignment.create({
+
           year,
+
           month,
+
           week,
-          branch: branch._id,
+
+          branch:
+            branch._id,
+
           level,
-          suggestedCourse: selectedCourse._id,
-          reason: "No lecturer available",
+
+          suggestedCourse:
+            suggestedCourse._id,
+
+          reason:
+            "No lecturer available for any remaining course",
+
         });
 
+        // -------------------------------------------------
+        // Add to response
+        // -------------------------------------------------
+
         unassigned.push({
-          branchName: branch.name,
+
+          branch:
+            branch._id,
+
+          branchName:
+            branch.name,
+
+          region:
+            branch.region,
+
           level,
-          courseCode: selectedCourse.code,
-          courseName: selectedCourse.name,
+
+          course:
+            suggestedCourse._id,
+
+          courseCode:
+            suggestedCourse.code,
+
+          courseName:
+            suggestedCourse.name,
+
+          reason:
+            "No lecturer available for any remaining course",
+
         });
 
         continue;
       }
 
-      const lecturer = lecturers[0];
+      // ---------------------------------------------------
+      // Update lecturer workload
+      // ---------------------------------------------------
 
-      //------------------------------------------------
-      // Update Workload
-      //------------------------------------------------
+      selectedLecturer.currentAssignments++;
 
-      lecturer.currentAssignments++;
+      await selectedLecturer.save();
 
-      await lecturer.save();
+      // ---------------------------------------------------
+      // Prevent lecturer from being used again
+      // during this generation
+      // ---------------------------------------------------
 
-      usedLecturers.add(lecturer._id.toString());
+      usedLecturers.add(
+        selectedLecturer._id.toString()
+      );
 
-      //------------------------------------------------
-      // Save Schedule
-      //------------------------------------------------
+      // ---------------------------------------------------
+      // Create schedule
+      // ---------------------------------------------------
 
       await Schedule.create({
+
         year,
+
         month,
+
         week,
-        branch: branch._id,
+
+        branch:
+          branch._id,
+
         level,
-        course: selectedCourse._id,
-        lecturer: lecturer._id,
-        status: "DRAFT",
+
+        course:
+          selectedCourse._id,
+
+        lecturer:
+          selectedLecturer._id,
+
+        status:
+          "DRAFT",
+
       });
 
-      console.log(`Assigned ${lecturer.name} -> ${selectedCourse.code}`);
+      console.log(
+        `Assigned ${selectedLecturer.name} -> ${selectedCourse.code}`
+      );
 
       schedulesCreated++;
     }
   }
 
+  // =======================================================
+  // SUMMARY
+  // =======================================================
+
   console.log(
-    `\nSchedule generation complete. ${schedulesCreated} schedules created.`,
+    `\n========================================`
   );
 
+  console.log(
+    `Schedule generation complete.`
+  );
+
+  console.log(
+    `Expected Classes: ${branches.length}`
+  );
+
+  console.log(
+    `Schedules Created: ${schedulesCreated}`
+  );
+
+  console.log(
+    `Unassigned: ${unassigned.length}`
+  );
+
+  console.log(
+    `========================================`
+  );
+
+  // =======================================================
+  // RETURN
+  // =======================================================
+
   return {
+
     success: true,
 
     week,
@@ -261,12 +540,14 @@ export const generateSchedule = async (week) => {
 
     year,
 
-    totalClasses,
+    expectedClasses,
 
     schedulesCreated,
 
-    unassignedCount: unassigned.length,
+    unassignedCount:
+      unassigned.length,
 
     unassigned,
+
   };
 };

@@ -120,7 +120,7 @@ export default function Generate() {
                   <Typography variant="h6">Generation Summary</Typography>
 
                   <Typography>
-                    Expected Classes: {summary.totalClasses}
+                    Expected Classes: {summary.expectedClasses}
                   </Typography>
 
                   <Typography>

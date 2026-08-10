@@ -9,6 +9,8 @@ import {
   CardContent,
   CircularProgress,
   Container,
+  FormControl,
+  InputLabel,
   MenuItem,
   Select,
   Stack,
@@ -32,6 +34,10 @@ export default function Generate() {
 
   const [summary, setSummary] = useState(null);
 
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+
   const handleGenerate = async () => {
     try {
       setLoading(true);
@@ -40,7 +46,7 @@ export default function Generate() {
 
       setSuccess("");
 
-      const result = await generateSchedule(week);
+      const result = await generateSchedule(week, selectedMonth, selectedYear);
 
       setSummary(result);
 
@@ -81,22 +87,84 @@ export default function Generate() {
           <Stack spacing={3}>
             <Box>
               <Typography gutterBottom fontWeight="bold">
-                Select Week
+                Schedule Period
               </Typography>
 
-              <Select
-                fullWidth
-                value={week}
-                onChange={(e) => setWeek(e.target.value)}
-              >
-                <MenuItem value={1}>Week 1</MenuItem>
+              <Stack spacing={2}>
+                {/* Year */}
 
-                <MenuItem value={2}>Week 2</MenuItem>
+                <FormControl fullWidth>
+                  <InputLabel>Year</InputLabel>
 
-                <MenuItem value={3}>Week 3</MenuItem>
+                  <Select
+                    value={selectedYear}
+                    label="Year"
+                    onChange={(e) => setSelectedYear(Number(e.target.value))}
+                  >
+                    <MenuItem value={2026}>2026</MenuItem>
 
-                <MenuItem value={4}>Week 4</MenuItem>
-              </Select>
+                    <MenuItem value={2027}>2027</MenuItem>
+
+                    <MenuItem value={2028}>2028</MenuItem>
+                  </Select>
+                </FormControl>
+
+                {/* Month */}
+
+                <FormControl fullWidth>
+                  <InputLabel>Month</InputLabel>
+
+                  <Select
+                    value={selectedMonth}
+                    label="Month"
+                    onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                  >
+                    <MenuItem value={1}>January</MenuItem>
+
+                    <MenuItem value={2}>February</MenuItem>
+
+                    <MenuItem value={3}>March</MenuItem>
+
+                    <MenuItem value={4}>April</MenuItem>
+
+                    <MenuItem value={5}>May</MenuItem>
+
+                    <MenuItem value={6}>June</MenuItem>
+
+                    <MenuItem value={7}>July</MenuItem>
+
+                    <MenuItem value={8}>August</MenuItem>
+
+                    <MenuItem value={9}>September</MenuItem>
+
+                    <MenuItem value={10}>October</MenuItem>
+
+                    <MenuItem value={11}>November</MenuItem>
+
+                    <MenuItem value={12}>December</MenuItem>
+                  </Select>
+                </FormControl>
+
+                {/* Week */}
+
+                <FormControl fullWidth>
+                  <InputLabel>Week</InputLabel>
+
+                  <Select
+                    value={week}
+                    label="Week"
+                    onChange={(e) => setWeek(Number(e.target.value))}
+                  >
+                    <MenuItem value={1}>Week 1</MenuItem>
+
+                    <MenuItem value={2}>Week 2</MenuItem>
+
+                    <MenuItem value={3}>Week 3</MenuItem>
+
+                    <MenuItem value={4}>Week 4</MenuItem>
+                  </Select>
+                </FormControl>
+              </Stack>
             </Box>
 
             <Button

@@ -121,54 +121,61 @@ export default function Schedules() {
 
   const handleApproveWeek = async () => {
     try {
-      if (weekFilter === "ALL") {
-        alert("Please select a specific week first.");
-        return;
-      }
+      const result = await approveWeek(
+        Number(weekFilter),
+        Number(monthFilter),
+        Number(yearFilter),
+      );
 
-      const result = await approveWeek(weekFilter);
-
-      // alert(result.message);
       setSnackbarMessage(result.message);
+
       setSnackbarSeverity("success");
       setSnackbarOpen(true);
 
-      loadSchedules();
-    } catch (error) {
-      console.error(error);
+      await loadSchedules();
+    } catch (err) {
+      console.error("APPROVE WEEK ERROR:", err);
 
-      alert("Unable to approve schedules.");
+      setSnackbarMessage(
+        err.response?.data?.message || "Unable to approve week.",
+      );
+
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
     }
   };
 
   const handleApproveAll = async () => {
     try {
-      const result = await approveAll();
+      const result = await approveAll(Number(monthFilter), Number(yearFilter));
 
-      alert(result.message);
+      setSnackbarMessage(result.message);
 
-      loadSchedules();
-    } catch (error) {
-      console.error(error);
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
 
-      alert("Unable to approve schedules.");
+      await loadSchedules();
+    } catch (err) {
+      console.error("APPROVE ALL ERROR:", err);
+
+      setSnackbarMessage(
+        err.response?.data?.message || "Unable to approve schedules.",
+      );
+
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
     }
   };
 
   const handleCompleteWeek = async () => {
     try {
-      setLoading(true);
-
-      const month = new Date().getMonth() + 1;
-      const year = new Date().getFullYear();
-
       const result = await completeWeek(
-        weekFilter === "ALL" ? 1 : Number(weekFilter),
-        month,
-        year,
+        Number(weekFilter),
+        Number(monthFilter),
+        Number(yearFilter),
       );
 
-      setSnackbarMessage(result.message || "Week completed successfully.");
+      setSnackbarMessage(result.message);
 
       setSnackbarSeverity("success");
       setSnackbarOpen(true);
@@ -183,24 +190,19 @@ export default function Schedules() {
 
       setSnackbarSeverity("error");
       setSnackbarOpen(true);
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleCompleteMonth = async () => {
     try {
-      setLoading(true);
-
       const result = await completeMonth(
         Number(monthFilter),
         Number(yearFilter),
       );
 
-      setSnackbarMessage(result.message || "Month completed successfully.");
+      setSnackbarMessage(result.message);
 
       setSnackbarSeverity("success");
-
       setSnackbarOpen(true);
 
       await loadSchedules();
@@ -212,17 +214,14 @@ export default function Schedules() {
       );
 
       setSnackbarSeverity("error");
-
       setSnackbarOpen(true);
-    } finally {
-      setLoading(false);
     }
   };
 
   const filteredSchedules = schedules.filter((schedule) => {
-    const matchesMonth =
-      schedule.month === Number(monthFilter) &&
-      schedule.year === Number(yearFilter);
+    const matchesYear = schedule.year === Number(yearFilter);
+
+    const matchesMonth = schedule.month === Number(monthFilter);
 
     const matchesWeek =
       weekFilter === "ALL" || schedule.week === Number(weekFilter);
@@ -235,7 +234,7 @@ export default function Schedules() {
       schedule.course?.code?.toLowerCase().includes(searchText) ||
       schedule.lecturer?.name?.toLowerCase().includes(searchText);
 
-    return matchesMonth && matchesWeek && matchesSearch;
+    return matchesYear && matchesMonth && matchesWeek && matchesSearch;
   });
 
   //--------------------------------------------------
@@ -274,6 +273,7 @@ export default function Schedules() {
         <Typography variant="h4" fontWeight="bold">
           Schedule Management
         </Typography>
+        
 
         <Button variant="contained" color="success" onClick={handleApproveWeek}>
           Approve Week
@@ -326,6 +326,22 @@ export default function Schedules() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+
+          <FormControl sx={{ minWidth: 150 }}>
+            <InputLabel>Year</InputLabel>
+
+            <Select
+              value={yearFilter}
+              label="Year"
+              onChange={(e) => setYearFilter(Number(e.target.value))}
+            >
+              <MenuItem value={2026}>2026</MenuItem>
+
+              <MenuItem value={2027}>2027</MenuItem>
+
+              <MenuItem value={2028}>2028</MenuItem>
+            </Select>
+          </FormControl>
 
           <FormControl sx={{ minWidth: 180 }}>
             <InputLabel>Month</InputLabel>

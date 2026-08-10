@@ -1,5 +1,6 @@
 import Progress from "../models/Progress.js";
 import Course from "../models/Course.js";
+import Branch from "../models/Branch.js";
 import { calculateBranchProgress } from "../services/progressService.js";
 
 export const createProgress = async (req, res) => {
@@ -16,15 +17,22 @@ export const createProgress = async (req, res) => {
 
 export const getProgress = async (req, res) => {
   try {
-    const progress = await Progress.find()
-      .populate("branch")
-      .populate("completedCourses");
+
+    const progress =
+      await Progress.find()
+        .populate("branch")
+        .populate("completedCourses.course")
+        .populate("completedCourses.lecturer")
+        .populate("completedCourses.schedule");
 
     res.json(progress);
+
   } catch (error) {
+
     res.status(500).json({
       message: error.message,
     });
+
   }
 };
 

@@ -5,15 +5,36 @@ import Progress from "../models/Progress.js";
 
 export const generate = async (req, res) => {
   try {
-    const week = Number(req.params.week);
 
-    const result = await generateSchedule(week);
+    const week =
+      Number(req.params.week);
+
+    const month =
+      Number(req.query.month);
+
+    const year =
+      Number(req.query.year);
+
+    const result =
+      await generateSchedule(
+        week,
+        month,
+        year
+      );
 
     res.json(result);
+
   } catch (error) {
+
+    console.error(
+      "GENERATE SCHEDULE ERROR:",
+      error
+    );
+
     res.status(500).json({
       message: error.message,
     });
+
   }
 };
 
@@ -95,90 +116,65 @@ export const updateSchedule = async (req, res) => {
     //----------------------------------------------------
 
     if (status) {
+      schedule.status = status;
 
-  schedule.status = status;
+      //--------------------------------------------------
+      // Progress Record
+      //--------------------------------------------------
 
-  //--------------------------------------------------
-  // Progress Record
-  //--------------------------------------------------
-
-  let progress = await Progress.findOne({
-    branch: schedule.branch,
-    level: schedule.level,
-  });
-
-  if (!progress) {
-
-    progress = await Progress.create({
-      branch: schedule.branch,
-      level: schedule.level,
-      completedCourses: [],
-    });
-
-  }
-
-  //--------------------------------------------------
-  // APPROVED -> COMPLETED
-  //--------------------------------------------------
-
-  if (
-    previousStatus !== "COMPLETED" &&
-    status === "COMPLETED"
-  ) {
-
-    const exists = progress.completedCourses.some(
-      (item) =>
-        item.course.toString() ===
-        schedule.course.toString()
-    );
-
-    if (!exists) {
-
-      progress.completedCourses.push({
-
-        course: schedule.course,
-
-        lecturer: schedule.lecturer,
-
-        schedule: schedule._id,
-
-        completedDate: new Date(),
-
-        manuallyCompleted: false,
-
+      let progress = await Progress.findOne({
+        branch: schedule.branch,
+        level: schedule.level,
       });
 
-      console.log("Course added to progress.");
+      if (!progress) {
+        progress = await Progress.create({
+          branch: schedule.branch,
+          level: schedule.level,
+          completedCourses: [],
+        });
+      }
 
+      //--------------------------------------------------
+      // APPROVED -> COMPLETED
+      //--------------------------------------------------
+
+      if (previousStatus !== "COMPLETED" && status === "COMPLETED") {
+        const exists = progress.completedCourses.some(
+          (item) => item.course.toString() === schedule.course.toString(),
+        );
+
+        if (!exists) {
+          progress.completedCourses.push({
+            course: schedule.course,
+
+            lecturer: schedule.lecturer,
+
+            schedule: schedule._id,
+
+            completedDate: new Date(),
+
+            manuallyCompleted: false,
+          });
+
+          console.log("Course added to progress.");
+        }
+      }
+
+      //--------------------------------------------------
+      // COMPLETED -> Anything Else
+      //--------------------------------------------------
+
+      if (previousStatus === "COMPLETED" && status !== "COMPLETED") {
+        progress.completedCourses = progress.completedCourses.filter(
+          (item) => item.course.toString() !== schedule.course.toString(),
+        );
+
+        console.log("Course removed from progress.");
+      }
+
+      await progress.save();
     }
-
-  }
-
-  //--------------------------------------------------
-  // COMPLETED -> Anything Else
-  //--------------------------------------------------
-
-  if (
-    previousStatus === "COMPLETED" &&
-    status !== "COMPLETED"
-  ) {
-
-    progress.completedCourses =
-      progress.completedCourses.filter(
-
-        (item) =>
-          item.course.toString() !==
-          schedule.course.toString()
-
-      );
-
-      console.log("Course removed from progress.");
-
-  }
-
-  await progress.save();
-
-}
 
     await schedule.save();
 
@@ -216,28 +212,32 @@ export const approveWeek = async (req, res) => {
 
     const week = Number(req.params.week);
 
-    const month = Number(
-      req.query.month || new Date().getMonth() + 1
-    );
+    const month = Number(req.query.month);
 
-    const year = Number(
-      req.query.year || new Date().getFullYear()
-    );
+    const year = Number(req.query.year);
 
-    const result = await Schedule.updateMany(
-      {
-        week,
-        month,
-        year,
-        status: "DRAFT",
-      },
-      {
-        status: "APPROVED",
-      }
-    );
+    if (!month || !year) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Month and year are required.",
+      });
+    }
+
+    const result =
+      await Schedule.updateMany(
+        {
+          week,
+          month,
+          year,
+          status: "DRAFT",
+        },
+        {
+          status: "APPROVED",
+        }
+      );
 
     res.json({
-
       success: true,
 
       week,
@@ -249,36 +249,69 @@ export const approveWeek = async (req, res) => {
       modified: result.modifiedCount,
 
       message:
-        `${result.modifiedCount} schedules approved.`,
-
+        `${result.modifiedCount} schedules approved for Week ${week}, ${month}/${year}.`,
     });
 
   } catch (error) {
+
+    console.error(
+      "APPROVE WEEK ERROR:",
+      error
+    );
 
     res.status(500).json({
       message: error.message,
     });
-
   }
 };
-
 export const approveAll = async (req, res) => {
   try {
-    const result = await Schedule.updateMany(
-      {
-        status: "DRAFT",
-      },
-      {
-        status: "APPROVED",
-      },
-    );
+
+    const month = Number(req.query.month);
+
+    const year = Number(req.query.year);
+
+    if (!month || !year) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Month and year are required.",
+      });
+    }
+
+    const result =
+      await Schedule.updateMany(
+        {
+          month,
+          year,
+          status: "DRAFT",
+        },
+        {
+          status: "APPROVED",
+        }
+      );
 
     res.json({
       success: true,
-      modified: result.modifiedCount,
-      message: `${result.modifiedCount} schedules approved.`,
+
+      month,
+
+      year,
+
+      modified:
+        result.modifiedCount,
+
+      message:
+        `${result.modifiedCount} schedules approved for ${month}/${year}.`,
     });
+
   } catch (error) {
+
+    console.error(
+      "APPROVE ALL ERROR:",
+      error
+    );
+
     res.status(500).json({
       message: error.message,
     });
@@ -289,17 +322,18 @@ export const completeWeek = async (req, res) => {
   try {
     const week = Number(req.params.week);
 
-    const month = Number(
-      req.query.month || new Date().getMonth() + 1
-    );
+    const month = Number(req.query.month || new Date().getMonth() + 1);
 
-    const year = Number(
-      req.query.year || new Date().getFullYear()
-    );
+    const year = Number(req.query.year || new Date().getFullYear());
+    if (!month || !year) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Month and year are required.",
+      });
+    }
 
-    console.log(
-      `Completing Week ${week}, Month ${month}, Year ${year}`
-    );
+    console.log(`Completing Week ${week}, Month ${month}, Year ${year}`);
 
     const schedules = await Schedule.find({
       week,
@@ -311,8 +345,7 @@ export const completeWeek = async (req, res) => {
     if (schedules.length === 0) {
       return res.status(400).json({
         success: false,
-        message:
-          `No approved schedules found for Week ${week}, ${month}/${year}.`,
+        message: `No approved schedules found for Week ${week}, ${month}/${year}.`,
       });
     }
 
@@ -320,7 +353,6 @@ export const completeWeek = async (req, res) => {
     let progressUpdated = 0;
 
     for (const schedule of schedules) {
-
       let progress = await Progress.findOne({
         branch: schedule.branch,
         level: schedule.level,
@@ -334,18 +366,18 @@ export const completeWeek = async (req, res) => {
         });
       }
 
-      const alreadyCompleted =
-        progress.completedCourses.some(
-          (item) =>
-            item.course.toString() ===
-            schedule.course.toString()
-        );
+      const alreadyCompleted = progress.completedCourses.some(
+        (item) => item.course.toString() === schedule.course.toString(),
+      );
 
       if (!alreadyCompleted) {
-
         progress.completedCourses.push({
           course: schedule.course,
-          completedAt: new Date(),
+          completedDate: new Date(),
+          lecturer: schedule.lecturer || null,
+          schedule: schedule._id,
+          manuallyCompleted: false,
+          notes: "",
         });
 
         await progress.save();
@@ -368,16 +400,10 @@ export const completeWeek = async (req, res) => {
       schedulesFound: schedules.length,
       completedSchedules,
       progressUpdated,
-      message:
-        `Week ${week} completed successfully.`,
+      message: `Week ${week} completed successfully.`,
     });
-
   } catch (error) {
-
-    console.error(
-      "COMPLETE WEEK ERROR:",
-      error
-    );
+    console.error("COMPLETE WEEK ERROR:", error);
 
     res.status(500).json({
       success: false,
@@ -390,13 +416,9 @@ export const completeMonth = async (req, res) => {
   try {
     const month = Number(req.params.month);
 
-    const year = Number(
-      req.query.year || new Date().getFullYear()
-    );
+    const year = Number(req.query.year || new Date().getFullYear());
 
-    console.log(
-      `Completing Month ${month}, Year ${year}`
-    );
+    console.log(`Completing Month ${month}, Year ${year}`);
 
     // --------------------------------------------------
     // Find all APPROVED schedules for this month
@@ -411,8 +433,7 @@ export const completeMonth = async (req, res) => {
     if (schedules.length === 0) {
       return res.status(400).json({
         success: false,
-        message:
-          `No approved schedules found for ${month}/${year}.`,
+        message: `No approved schedules found for ${month}/${year}.`,
       });
     }
 
@@ -424,7 +445,6 @@ export const completeMonth = async (req, res) => {
     // --------------------------------------------------
 
     for (const schedule of schedules) {
-
       // -----------------------------------------------
       // Find branch/level progress
       // -----------------------------------------------
@@ -450,22 +470,22 @@ export const completeMonth = async (req, res) => {
       // Prevent duplicate completed courses
       // -----------------------------------------------
 
-      const alreadyCompleted =
-        progress.completedCourses.some(
-          (item) =>
-            item.course.toString() ===
-            schedule.course.toString()
-        );
+      const alreadyCompleted = progress.completedCourses.some(
+        (item) => item.course.toString() === schedule.course.toString(),
+      );
 
       // -----------------------------------------------
       // Add course to progress
       // -----------------------------------------------
 
       if (!alreadyCompleted) {
-
         progress.completedCourses.push({
           course: schedule.course,
-          completedAt: new Date(),
+          completedDate: new Date(),
+          lecturer: schedule.lecturer || null,
+          schedule: schedule._id,
+          manuallyCompleted: false,
+          notes: "",
         });
 
         await progress.save();
@@ -497,16 +517,10 @@ export const completeMonth = async (req, res) => {
 
       progressUpdated,
 
-      message:
-        `Month ${month}/${year} completed successfully.`,
+      message: `Month ${month}/${year} completed successfully.`,
     });
-
   } catch (error) {
-
-    console.error(
-      "COMPLETE MONTH ERROR:",
-      error
-    );
+    console.error("COMPLETE MONTH ERROR:", error);
 
     res.status(500).json({
       success: false,

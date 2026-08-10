@@ -19,25 +19,80 @@ export const calculateBranchProgress = async (branchId) => {
 
   for (const level of levels) {
 
-    const progress = await Progress.findOne({
-      branch: branchId,
+    // ---------------------------------------------
+    // Get all courses for this level
+    // ---------------------------------------------
+
+    const courses = await Course.find({
       level,
+    }).sort({
+      code: 1,
     });
 
-    const totalCourses = await Course.countDocuments({
-      level,
-    });
+    // ---------------------------------------------
+    // Get branch progress for this level
+    // ---------------------------------------------
 
-    const completed = progress
-      ? progress.completedCourses.length
-      : 0;
+    const progress =
+      await Progress.findOne({
+        branch: branchId,
+        level,
+      }).populate(
+        "completedCourses.course"
+      );
+
+    const completedCourses =
+      progress?.completedCourses || [];
+
+    // ---------------------------------------------
+    // Completed course IDs
+    // ---------------------------------------------
+
+    const completedIds =
+      completedCourses.map(
+        (item) =>
+          item.course?._id?.toString()
+      );
+
+    // ---------------------------------------------
+    // Calculate counts
+    // ---------------------------------------------
+
+    const totalCourses =
+      courses.length;
+
+    const completed =
+      completedCourses.length;
+
+    const remaining =
+      Math.max(
+        totalCourses - completed,
+        0
+      );
 
     const percentage =
       totalCourses === 0
         ? 0
         : Math.round(
-            (completed / totalCourses) * 100
+            (completed / totalCourses) *
+              100
           );
+
+    // ---------------------------------------------
+    // Remaining courses
+    // ---------------------------------------------
+
+    const remainingCourses =
+      courses.filter(
+        (course) =>
+          !completedIds.includes(
+            course._id.toString()
+          )
+      );
+
+    // ---------------------------------------------
+    // Save level result
+    // ---------------------------------------------
 
     result.levels[level] = {
 
@@ -45,29 +100,49 @@ export const calculateBranchProgress = async (branchId) => {
 
       total: totalCourses,
 
+      remaining,
+
       percentage,
 
+      completedCourses,
+
+      remainingCourses,
+
     };
+
+    // ---------------------------------------------
+    // Overall calculation
+    // ---------------------------------------------
 
     overallCompleted += completed;
 
     overallTotal += totalCourses;
   }
 
+  // ---------------------------------------------
+  // Overall progress
+  // ---------------------------------------------
+
   result.overall = {
 
-    completed: overallCompleted,
+    completed:
+      overallCompleted,
 
-    total: overallTotal,
+    total:
+      overallTotal,
+
+    remaining:
+      overallTotal -
+      overallCompleted,
 
     percentage:
       overallTotal === 0
         ? 0
         : Math.round(
-            (overallCompleted / overallTotal) *
+            (overallCompleted /
+              overallTotal) *
               100
           ),
-
   };
 
   return result;

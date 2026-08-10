@@ -21,7 +21,7 @@ import {
   TableRow,
   TextField,
   Typography,
-  Snackbar
+  Snackbar,
 } from "@mui/material";
 
 import RefreshIcon from "@mui/icons-material/Refresh";
@@ -30,10 +30,11 @@ import {
   getSchedules,
   approveWeek,
   approveAll,
+  completeWeek,
+  completeMonth,
 } from "../services/scheduleService";
 import EditScheduleDialog from "../components/dialogs/EditScheduleDialog";
-
-
+import { getPendingAssignments } from "../services/pendingAssignmentService";
 
 export default function Schedules() {
   const [loading, setLoading] = useState(true);
@@ -42,9 +43,19 @@ export default function Schedules() {
 
   const [schedules, setSchedules] = useState([]);
 
+  const [pendingAssignments, setPendingAssignments] = useState([]);
+
   const [search, setSearch] = useState("");
 
   const [weekFilter, setWeekFilter] = useState("ALL");
+
+  const [monthFilter, setMonthFilter] = useState(new Date().getMonth() + 1);
+
+  const [yearFilter, setYearFilter] = useState(new Date().getFullYear());
+
+  const [selectedPending, setSelectedPending] = useState(null);
+
+  const [assignMode, setAssignMode] = useState(false);
 
   // dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -82,8 +93,20 @@ export default function Schedules() {
   // Initial load
   //--------------------------------------------------
 
+  // load schedules pending
+  const loadPendingAssignments = async () => {
+    try {
+      const data = await getPendingAssignments();
+
+      setPendingAssignments(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   useEffect(() => {
     loadSchedules();
+    loadPendingAssignments();
 
     // const interval = setInterval(() => {
     //   loadSchedules();
@@ -98,52 +121,120 @@ export default function Schedules() {
 
   const handleApproveWeek = async () => {
     try {
-      if (weekFilter === "ALL") {
-        alert("Please select a specific week first.");
-        return;
-      }
+      const result = await approveWeek(
+        Number(weekFilter),
+        Number(monthFilter),
+        Number(yearFilter),
+      );
 
-      const result = await approveWeek(weekFilter);
-
-      // alert(result.message);
       setSnackbarMessage(result.message);
+
       setSnackbarSeverity("success");
       setSnackbarOpen(true);
 
-      loadSchedules();
-    } catch (error) {
-      console.error(error);
+      await loadSchedules();
+    } catch (err) {
+      console.error("APPROVE WEEK ERROR:", err);
 
-      alert("Unable to approve schedules.");
+      setSnackbarMessage(
+        err.response?.data?.message || "Unable to approve week.",
+      );
+
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
     }
   };
 
   const handleApproveAll = async () => {
     try {
-      const result = await approveAll();
+      const result = await approveAll(Number(monthFilter), Number(yearFilter));
 
-      alert(result.message);
+      setSnackbarMessage(result.message);
 
-      loadSchedules();
-    } catch (error) {
-      console.error(error);
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
 
-      alert("Unable to approve schedules.");
+      await loadSchedules();
+    } catch (err) {
+      console.error("APPROVE ALL ERROR:", err);
+
+      setSnackbarMessage(
+        err.response?.data?.message || "Unable to approve schedules.",
+      );
+
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+    }
+  };
+
+  const handleCompleteWeek = async () => {
+    try {
+      const result = await completeWeek(
+        Number(weekFilter),
+        Number(monthFilter),
+        Number(yearFilter),
+      );
+
+      setSnackbarMessage(result.message);
+
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
+
+      await loadSchedules();
+    } catch (err) {
+      console.error("COMPLETE WEEK ERROR:", err);
+
+      setSnackbarMessage(
+        err.response?.data?.message || "Unable to complete week.",
+      );
+
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+    }
+  };
+
+  const handleCompleteMonth = async () => {
+    try {
+      const result = await completeMonth(
+        Number(monthFilter),
+        Number(yearFilter),
+      );
+
+      setSnackbarMessage(result.message);
+
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
+
+      await loadSchedules();
+    } catch (err) {
+      console.error("COMPLETE MONTH ERROR:", err);
+
+      setSnackbarMessage(
+        err.response?.data?.message || "Unable to complete month.",
+      );
+
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
     }
   };
 
   const filteredSchedules = schedules.filter((schedule) => {
+    const matchesYear = schedule.year === Number(yearFilter);
+
+    const matchesMonth = schedule.month === Number(monthFilter);
+
     const matchesWeek =
       weekFilter === "ALL" || schedule.week === Number(weekFilter);
 
     const searchText = search.toLowerCase();
 
     const matchesSearch =
-      schedule.branch?.name.toLowerCase().includes(searchText) ||
-      schedule.course?.name.toLowerCase().includes(searchText) ||
-      schedule.lecturer?.name.toLowerCase().includes(searchText);
+      schedule.branch?.name?.toLowerCase().includes(searchText) ||
+      schedule.course?.name?.toLowerCase().includes(searchText) ||
+      schedule.course?.code?.toLowerCase().includes(searchText) ||
+      schedule.lecturer?.name?.toLowerCase().includes(searchText);
 
-    return matchesWeek && matchesSearch;
+    return matchesYear && matchesMonth && matchesWeek && matchesSearch;
   });
 
   //--------------------------------------------------
@@ -182,9 +273,18 @@ export default function Schedules() {
         <Typography variant="h4" fontWeight="bold">
           Schedule Management
         </Typography>
+        
 
         <Button variant="contained" color="success" onClick={handleApproveWeek}>
           Approve Week
+        </Button>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleCompleteWeek}
+          disabled={weekFilter === "ALL" || loading}
+        >
+          Complete Week
         </Button>
 
         <Button
@@ -193,6 +293,14 @@ export default function Schedules() {
           onClick={handleApproveAll}
         >
           Approve All
+        </Button>
+        <Button
+          variant="contained"
+          color="warning"
+          onClick={handleCompleteMonth}
+          disabled={loading}
+        >
+          Complete Month
         </Button>
 
         <Button
@@ -218,6 +326,45 @@ export default function Schedules() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+
+          <FormControl sx={{ minWidth: 150 }}>
+            <InputLabel>Year</InputLabel>
+
+            <Select
+              value={yearFilter}
+              label="Year"
+              onChange={(e) => setYearFilter(Number(e.target.value))}
+            >
+              <MenuItem value={2026}>2026</MenuItem>
+
+              <MenuItem value={2027}>2027</MenuItem>
+
+              <MenuItem value={2028}>2028</MenuItem>
+            </Select>
+          </FormControl>
+
+          <FormControl sx={{ minWidth: 180 }}>
+            <InputLabel>Month</InputLabel>
+
+            <Select
+              value={monthFilter}
+              label="Month"
+              onChange={(e) => setMonthFilter(e.target.value)}
+            >
+              <MenuItem value={1}>January</MenuItem>
+              <MenuItem value={2}>February</MenuItem>
+              <MenuItem value={3}>March</MenuItem>
+              <MenuItem value={4}>April</MenuItem>
+              <MenuItem value={5}>May</MenuItem>
+              <MenuItem value={6}>June</MenuItem>
+              <MenuItem value={7}>July</MenuItem>
+              <MenuItem value={8}>August</MenuItem>
+              <MenuItem value={9}>September</MenuItem>
+              <MenuItem value={10}>October</MenuItem>
+              <MenuItem value={11}>November</MenuItem>
+              <MenuItem value={12}>December</MenuItem>
+            </Select>
+          </FormControl>
 
           <FormControl sx={{ minWidth: 180 }}>
             <InputLabel>Week</InputLabel>
@@ -324,8 +471,7 @@ export default function Schedules() {
                         <Typography variant="body2" color="text.secondary">
                           {schedule.lecturer?.phone}
                         </Typography>
-                        
-                        </TableCell>
+                      </TableCell>
 
                       <TableCell>
                         <Chip
@@ -355,27 +501,97 @@ export default function Schedules() {
           </TableContainer>
         )}
       </Paper>
+      {/* Conditionally render Unassigned Classes section */}
+      {pendingAssignments.length > 0 && (
+        <Paper sx={{ p: 2, mt: 3 }}>
+          <Typography variant="h5" sx={{ mt: 5, mb: 2 }}>
+            Unassigned Classes
+          </Typography>
+
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Branch</TableCell>
+
+                <TableCell>Level</TableCell>
+
+                <TableCell>Suggested Course</TableCell>
+
+                <TableCell>Reason</TableCell>
+
+                <TableCell align="center">Action</TableCell>
+              </TableRow>
+            </TableHead>
+
+            <TableBody>
+              {pendingAssignments.map((item) => (
+                <TableRow key={item._id}>
+                  <TableCell>{item.branch.name}</TableCell>
+
+                  <TableCell>{item.level}</TableCell>
+
+                  <TableCell>
+                    {item.suggestedCourse.code}
+                    {" - "}
+                    {item.suggestedCourse.name}
+                  </TableCell>
+
+                  <TableCell>{item.reason}</TableCell>
+
+                  <TableCell align="center">
+                    <Button
+                      variant="contained"
+                      size="small"
+                      onClick={() => {
+                        setSelectedPending(item);
+
+                        setAssignMode(true);
+
+                        setDialogOpen(true);
+                      }}
+                    >
+                      Assign
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Paper>
+      )}
       <EditScheduleDialog
         open={dialogOpen}
+        onClose={() => {
+          setDialogOpen(false);
+
+          setAssignMode(false);
+
+          setSelectedPending(null);
+          setSelectedSchedule(null);
+        }}
         schedule={selectedSchedule}
-        onClose={() => setDialogOpen(false)}
-        onUpdated={loadSchedules}
+        pendingAssignment={selectedPending}
+        assignMode={assignMode}
+        onUpdated={() => {
+          loadSchedules();
+
+          loadPendingAssignments();
+        }}
       />
     </Container>
   );
-<Snackbar
-  open={snackbarOpen}
-  autoHideDuration={3000}
-  onClose={() => setSnackbarOpen(false)}
-  anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
->
-  <Alert
-    severity={snackbarSeverity}
+  <Snackbar
+    open={snackbarOpen}
+    autoHideDuration={3000}
     onClose={() => setSnackbarOpen(false)}
-    variant="filled"
+    anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
   >
-    {snackbarMessage}
-  </Alert>
-</Snackbar>
+    <Alert
+      severity={snackbarSeverity}
+      onClose={() => setSnackbarOpen(false)}
+      variant="filled"
+    >
+      {snackbarMessage}
+    </Alert>
+  </Snackbar>;
 }
-

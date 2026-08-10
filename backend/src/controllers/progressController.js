@@ -1,79 +1,128 @@
 import Progress from "../models/Progress.js";
+import Course from "../models/Course.js";
+import Branch from "../models/Branch.js";
+import { calculateBranchProgress } from "../services/progressService.js";
 
-export const createProgress = async (
-  req,
-  res
-) => {
+export const createProgress = async (req, res) => {
   try {
-
-    const progress =
-      await Progress.create(req.body);
+    const progress = await Progress.create(req.body);
 
     res.status(201).json(progress);
-
   } catch (error) {
-
     res.status(500).json({
-      message: error.message
+      message: error.message,
     });
-
   }
 };
 
-export const getProgress = async (
-  req,
-  res
-) => {
+export const getProgress = async (req, res) => {
   try {
 
     const progress =
       await Progress.find()
         .populate("branch")
-        .populate("completedCourses");
+        .populate("completedCourses.course")
+        .populate("completedCourses.lecturer")
+        .populate("completedCourses.schedule");
 
     res.json(progress);
 
   } catch (error) {
 
     res.status(500).json({
-      message: error.message
+      message: error.message,
     });
 
   }
 };
 
-export const addCompletedCourse =
-  async (req, res) => {
+export const addCompletedCourse = async (req, res) => {
+  try {
+    const progress = await Progress.findById(req.params.id);
 
-    try {
+    if (!progress) {
+      return res.status(404).json({
+        message: "Progress not found",
+      });
+    }
 
-      const progress =
-        await Progress.findById(
-          req.params.id
-        );
+    const alreadyCompleted = progress.completedCourses.some(
+      (item) => item.course.toString() === req.body.courseId,
+    );
 
-      if (!progress) {
+    if (alreadyCompleted) {
+      return res.status(400).json({
+        message: "Course already completed.",
+      });
+    }
 
-        return res.status(404).json({
-          message:
-            "Progress not found"
-        });
+    progress.completedCourses.push({
+      course: req.body.courseId,
 
-      }
+      completedDate: new Date(),
 
-      progress.completedCourses.push(
-        req.body.courseId
+      lecturer: req.body.lecturer || null,
+
+      schedule: req.body.schedule || null,
+
+      manuallyCompleted: req.body.manuallyCompleted ?? true,
+
+      notes: req.body.notes || "",
+    });
+
+    await progress.save();
+
+    res.json(progress);
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+export const getRemainingCourses = async (req, res) => {
+  try {
+    const progress = await Progress.findOne({
+      branch: req.params.branchId,
+      level: req.params.level,
+    });
+
+    const completedCourses = progress
+      ? progress.completedCourses.map((item) => item.course)
+      : [];
+
+    const remaining = await Course.find({
+      level: req.params.level,
+      _id: {
+        $nin: completedCourses,
+      },
+    }).sort({ code: 1 });
+
+    res.json(remaining);
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+export const getBranchProgress = async (req, res) => {
+
+  try {
+
+    const summary =
+      await calculateBranchProgress(
+        req.params.branchId
       );
 
-      await progress.save();
+    res.json(summary);
 
-      res.json(progress);
+  } catch (error) {
 
-    } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
 
-      res.status(500).json({
-        message: error.message
-      });
+  }
 
-    }
 };

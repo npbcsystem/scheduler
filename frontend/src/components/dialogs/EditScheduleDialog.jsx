@@ -16,14 +16,18 @@ import {
 
 import {
   getLecturers,
-  getLecturersByCourse
+  getLecturersByCourse,
 } from "../../services/lecturerService";
 import { updateSchedule } from "../../services/scheduleService";
+import { getRemainingCourses } from "../../services/progressService";
+import { assignPendingAssignment } from "../../services/pendingAssignmentService";
 
 export default function EditScheduleDialog({
   open,
   onClose,
   schedule,
+  pendingAssignment,
+  assignMode,
   onUpdated,
 }) {
   const [lecturers, setLecturers] = useState([]);
@@ -34,47 +38,85 @@ export default function EditScheduleDialog({
 
   const [saving, setSaving] = useState(false);
 
+  const [courses, setCourses] = useState([]);
+
+  const [selectedCourse, setSelectedCourse] = useState("");
+
+  const current = assignMode ? pendingAssignment : schedule;
+
   useEffect(() => {
-    if (schedule) {
-      setSelectedLecturer(schedule.lecturer?._id);
+    if (!current) return;
 
-      setStatus(schedule.status);
+    loadCourses(current.branch._id, current.level);
+
+    if (assignMode) {
+      setSelectedCourse(current.suggestedCourse._id);
+
+      loadLecturers(current.suggestedCourse._id);
+
+      setSelectedLecturer("");
+
+      setStatus("DRAFT");
+    } else {
+      setSelectedCourse(current.course._id);
+
+      loadLecturers(current.course._id);
+
+      setSelectedLecturer(current.lecturer?._id || "");
+
+      setStatus(current.status);
     }
-  }, [schedule]);
-
-  //   load lecturer by course
-  useEffect(() => {
-    if (schedule) {
-      loadLecturers(schedule.course._id);
-
-      setSelectedLecturer(schedule.lecturer?._id);
-
-      setStatus(schedule.status);
-    }
-  }, [schedule]);
+  }, [current, assignMode]);
 
   const loadLecturers = async (courseId) => {
-  try {
+    try {
+      const data = await getLecturersByCourse(courseId);
 
-    const data = await getLecturersByCourse(courseId);
+      setLecturers(data);
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
-    setLecturers(data);
+  const loadCourses = async (branchId, level) => {
+    try {
+      const data = await getRemainingCourses(branchId, level);
 
-  } catch (err) {
-
-    console.log(err);
-
-  }
-};
+      setCourses(data);
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
   const handleSave = async () => {
     try {
       setSaving(true);
 
-      await updateSchedule(schedule._id, {
-        lecturer: selectedLecturer,
-        status,
-      });
+      if (assignMode) {
+        await assignPendingAssignment(
+          pendingAssignment._id,
+
+          {
+            course: selectedCourse,
+
+            lecturer: selectedLecturer,
+
+            status,
+          },
+        );
+      } else {
+        await updateSchedule(
+          schedule._id,
+
+          {
+            course: selectedCourse,
+
+            lecturer: selectedLecturer,
+
+            status,
+          },
+        );
+      }
 
       onUpdated();
 
@@ -86,25 +128,50 @@ export default function EditScheduleDialog({
     }
   };
 
-  if (!schedule) return null;
+  if (!current) return null;
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>Edit Schedule</DialogTitle>
+      <DialogTitle>
+        {assignMode ? "Assign Pending Class" : "Edit Schedule"}
+      </DialogTitle>
 
       <DialogContent>
         <Stack spacing={3} sx={{ mt: 1 }}>
           <Typography>
-            <strong>Branch:</strong> {schedule.branch?.name}
+            <strong>Branch:</strong> {current.branch?.name}
           </Typography>
 
           <Typography>
-            <strong>Course:</strong> {schedule.course?.name}
+            <strong>Course:</strong>{" "}
+            {assignMode ? current.suggestedCourse?.name : current.course?.name}
           </Typography>
 
           <Typography>
-            <strong>Level:</strong> {schedule.level}
+            <strong>Level:</strong> {current.level}
           </Typography>
+
+          <FormControl fullWidth>
+            <InputLabel>Course</InputLabel>
+
+            <Select
+              label="Course"
+              value={selectedCourse}
+              onChange={async (e) => {
+                const value = e.target.value;
+
+                setSelectedCourse(value);
+
+                await loadLecturers(value);
+              }}
+            >
+              {courses.map((course) => (
+                <MenuItem key={course._id} value={course._id}>
+                  {course.code} - {course.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
 
           <FormControl fullWidth>
             <InputLabel>Lecturer</InputLabel>

@@ -12,3 +12,26 @@ export const getLecturersByCourse = async (courseId) => {
 
   return data;
 };
+
+export const createLecturer = async (
+  data
+) => {
+  const response = await api.post(
+    "/lecturers",
+    data
+  );
+
+  return response.data;
+};
+
+export const updateLecturer = async (
+  lecturerId,
+  data
+) => {
+  const response = await api.put(
+    `/lecturers/${lecturerId}`,
+    data
+  );
+
+  return response.data;
+};

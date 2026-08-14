@@ -16,3 +16,12 @@ export const updateBranch = async (
 
   return response.data;
 };
+
+export const createBranch = async (data) => {
+  const response = await api.post(
+    "/branches",
+    data
+  );
+
+  return response.data;
+};

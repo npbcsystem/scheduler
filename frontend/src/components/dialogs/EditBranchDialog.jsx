@@ -15,6 +15,7 @@ import {
 } from "@mui/material";
 
 import { updateBranch } from "../../services/branchService";
+import { kenyaCounties } from "./kenya";
 
 export default function EditBranchDialog({ open, onClose, branch, onUpdated }) {
   const [name, setName] = useState("");
@@ -44,44 +45,31 @@ export default function EditBranchDialog({ open, onClose, branch, onUpdated }) {
   }, [branch]);
 
   const handleSave = async () => {
-  try {
+    try {
+      setSaving(true);
 
-    setSaving(true);
-
-    await updateBranch(
-      branch._id,
-      {
+      await updateBranch(branch._id, {
         name,
         region,
         levels,
         week,
         active,
-      }
-    );
+      });
 
-    onUpdated();
+      onUpdated();
 
-    onClose();
+      onClose();
+    } catch (error) {
+      console.error("UPDATE BRANCH ERROR:", error);
 
-  } catch (error) {
+      const message =
+        error.response?.data?.message || "Unable to update branch.";
 
-    console.error(
-      "UPDATE BRANCH ERROR:",
-      error
-    );
-
-    const message =
-      error.response?.data?.message ||
-      "Unable to update branch.";
-
-    alert(message);
-
-  } finally {
-
-    setSaving(false);
-
-  }
-};
+      alert(message);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (!branch) {
     return null;
@@ -100,12 +88,21 @@ export default function EditBranchDialog({ open, onClose, branch, onUpdated }) {
             onChange={(e) => setName(e.target.value)}
           />
 
-          <TextField
-            fullWidth
-            label="Region"
-            value={region}
-            onChange={(e) => setRegion(e.target.value)}
-          />
+          <FormControl fullWidth>
+            <InputLabel>County</InputLabel>
+
+            <Select
+              value={region}
+              label="County"
+              onChange={(e) => setRegion(e.target.value)}
+            >
+              {kenyaCounties.map((county) => (
+                <MenuItem key={county} value={county}>
+                  {county}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
           <FormControl fullWidth>
             <InputLabel>Levels</InputLabel>
 
@@ -116,11 +113,53 @@ export default function EditBranchDialog({ open, onClose, branch, onUpdated }) {
               onChange={(e) => setLevels(e.target.value)}
               renderValue={(selected) => selected.join(", ")}
             >
-              <MenuItem value="CERTIFICATE">Certificate</MenuItem>
+              <MenuItem
+                value="CERTIFICATE"
+                sx={{
+                  "&.Mui-selected": {
+                    backgroundColor: "primary.main",
+                    color: "primary.contrastText",
+                  },
 
-              <MenuItem value="ASSOCIATE">Associate</MenuItem>
+                  "&.Mui-selected:hover": {
+                    backgroundColor: "primary.dark",
+                  },
+                }}
+              >
+                Certificate
+              </MenuItem>
 
-              <MenuItem value="DIPLOMA">Diploma</MenuItem>
+              <MenuItem
+                value="ASSOCIATE"
+                sx={{
+                  "&.Mui-selected": {
+                    backgroundColor: "primary.main",
+                    color: "primary.contrastText",
+                  },
+
+                  "&.Mui-selected:hover": {
+                    backgroundColor: "primary.dark",
+                  },
+                }}
+              >
+                Associate
+              </MenuItem>
+
+              <MenuItem
+                value="DIPLOMA"
+                sx={{
+                  "&.Mui-selected": {
+                    backgroundColor: "primary.main",
+                    color: "primary.contrastText",
+                  },
+
+                  "&.Mui-selected:hover": {
+                    backgroundColor: "primary.dark",
+                  },
+                }}
+              >
+                Diploma
+              </MenuItem>
             </Select>
           </FormControl>
 
@@ -132,13 +171,69 @@ export default function EditBranchDialog({ open, onClose, branch, onUpdated }) {
               label="Teaching Week"
               onChange={(e) => setWeek(Number(e.target.value))}
             >
-              <MenuItem value={1}>Week 1</MenuItem>
+              <MenuItem
+                value={1}
+                sx={{
+                  "&.Mui-selected": {
+                    backgroundColor: "primary.main",
+                    color: "primary.contrastText",
+                  },
 
-              <MenuItem value={2}>Week 2</MenuItem>
+                  "&.Mui-selected:hover": {
+                    backgroundColor: "primary.dark",
+                  },
+                }}
+              >
+                Week 1
+              </MenuItem>
 
-              <MenuItem value={3}>Week 3</MenuItem>
+              <MenuItem
+                value={2}
+                sx={{
+                  "&.Mui-selected": {
+                    backgroundColor: "primary.main",
+                    color: "primary.contrastText",
+                  },
 
-              <MenuItem value={4}>Week 4</MenuItem>
+                  "&.Mui-selected:hover": {
+                    backgroundColor: "primary.dark",
+                  },
+                }}
+              >
+                Week 2
+              </MenuItem>
+
+              <MenuItem
+                value={3}
+                sx={{
+                  "&.Mui-selected": {
+                    backgroundColor: "primary.main",
+                    color: "primary.contrastText",
+                  },
+
+                  "&.Mui-selected:hover": {
+                    backgroundColor: "primary.dark",
+                  },
+                }}
+              >
+                Week 3
+              </MenuItem>
+
+              <MenuItem
+                value={4}
+                sx={{
+                  "&.Mui-selected": {
+                    backgroundColor: "primary.main",
+                    color: "primary.contrastText",
+                  },
+
+                  "&.Mui-selected:hover": {
+                    backgroundColor: "primary.dark",
+                  },
+                }}
+              >
+                Week 4
+              </MenuItem>
             </Select>
           </FormControl>
           <FormControl fullWidth>

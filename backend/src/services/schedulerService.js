@@ -37,11 +37,17 @@ const findAvailableLecturers = async (courseId, region, usedLecturers) => {
 
     {
       title: "Secondary Region",
-
       filter: {
         active: true,
         courses: courseId,
-        secondaryRegions: region,
+        $or: [
+          {
+            secondaryRegions: region,
+          },
+          {
+            secondaryRegions: "ALL",
+          },
+        ],
       },
     },
 

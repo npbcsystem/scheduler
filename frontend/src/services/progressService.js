@@ -32,3 +32,17 @@ export const addCompletedCourse = async (
 
   return response.data;
 };
+
+export const removeCompletedCourse = async (
+  progressId,
+  courseId
+) => {
+  const response = await api.put(
+    `/progress/${progressId}/remove-course`,
+    {
+      courseId,
+    }
+  );
+
+  return response.data;
+};

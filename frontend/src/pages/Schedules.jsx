@@ -24,7 +24,8 @@ import {
   Snackbar,
 } from "@mui/material";
 
-import RefreshIcon from "@mui/icons-material/Refresh";
+import IconButton from '@mui/material/IconButton';
+import RefreshIcon from '@mui/icons-material/Refresh';
 
 import {
   getSchedules,
@@ -303,13 +304,14 @@ export default function Schedules() {
           Complete Month
         </Button>
 
-        <Button
+        <IconButton
           variant="contained"
+          color="primary"
           startIcon={<RefreshIcon />}
           onClick={loadSchedules}
         >
-          Refresh
-        </Button>
+          <RefreshIcon />
+        </IconButton>
       </Stack>
 
       {error && (

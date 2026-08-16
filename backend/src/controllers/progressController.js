@@ -80,6 +80,37 @@ export const addCompletedCourse = async (req, res) => {
   }
 };
 
+export const removeCompletedCourse = async (req, res) => {
+  try {
+    const progress = await Progress.findById(
+      req.params.id
+    );
+
+    if (!progress) {
+      return res.status(404).json({
+        message: "Progress not found",
+      });
+    }
+
+    const courseId = req.body.courseId;
+
+    progress.completedCourses =
+      progress.completedCourses.filter(
+        (item) =>
+          item.course.toString() !== courseId
+      );
+
+    await progress.save();
+
+    res.json(progress);
+
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
 export const getRemainingCourses = async (req, res) => {
   try {
     const progress = await Progress.findOne({

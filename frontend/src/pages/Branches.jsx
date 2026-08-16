@@ -16,7 +16,14 @@ import {
   TableHead,
   TableRow,
   Typography,
+  TextField,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
 } from "@mui/material";
+import IconButton from '@mui/material/IconButton';
+import RefreshIcon from '@mui/icons-material/Refresh';
 
 import EditBranchDialog from "../components/dialogs/EditBranchDialog";
 
@@ -40,6 +47,11 @@ export default function Branches() {
   const [selectedBranch, setSelectedBranch] = useState(null);
 
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+
+  const [search, setSearch] = useState("");
+  const [levelFilter, setLevelFilter] = useState("ALL");
+  const [weekFilter, setWeekFilter] = useState("ALL");
+  const [statusFilter, setStatusFilter] = useState("ALL");
 
   // ---------------------------------------------
   // Load branches
@@ -79,6 +91,31 @@ export default function Branches() {
   // ---------------------------------------------
   // Render
   // ---------------------------------------------
+
+  // --------------------------------------------
+  // search filter
+  // --------------------------------------------
+  const filteredBranches = branches.filter((branch) => {
+    const searchText = search.toLowerCase().trim();
+
+    const matchesSearch =
+      !searchText ||
+      branch.name?.toLowerCase().includes(searchText) ||
+      branch.region?.toLowerCase().includes(searchText);
+
+    const matchesLevel =
+      levelFilter === "ALL" || branch.levels?.includes(levelFilter);
+
+    const matchesWeek =
+      weekFilter === "ALL" || Number(branch.week) === Number(weekFilter);
+
+    const matchesStatus =
+      statusFilter === "ALL" ||
+      (statusFilter === "ACTIVE" && branch.active) ||
+      (statusFilter === "INACTIVE" && !branch.active);
+
+    return matchesSearch && matchesLevel && matchesWeek && matchesStatus;
+  });
 
   return (
     <Container maxWidth="xl">
@@ -123,6 +160,90 @@ export default function Branches() {
           {error}
         </Alert>
       )}
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Stack
+          direction={{
+            xs: "column",
+            md: "row",
+          }}
+          spacing={2}
+        >
+          <TextField
+            fullWidth
+            label="Search Branches"
+            placeholder="Name or region..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+
+          <FormControl sx={{ minWidth: 180 }}>
+            <InputLabel>Level</InputLabel>
+
+            <Select
+              value={levelFilter}
+              label="Level"
+              onChange={(e) => setLevelFilter(e.target.value)}
+            >
+              <MenuItem value="ALL">All Levels</MenuItem>
+
+              <MenuItem value="CERTIFICATE">Certificate</MenuItem>
+
+              <MenuItem value="ASSOCIATE">Associate</MenuItem>
+
+              <MenuItem value="DIPLOMA">Diploma</MenuItem>
+            </Select>
+          </FormControl>
+
+          <FormControl sx={{ minWidth: 150 }}>
+            <InputLabel>Week</InputLabel>
+
+            <Select
+              value={weekFilter}
+              label="Week"
+              onChange={(e) => setWeekFilter(e.target.value)}
+            >
+              <MenuItem value="ALL">All Weeks</MenuItem>
+
+              <MenuItem value={1}>Week 1</MenuItem>
+
+              <MenuItem value={2}>Week 2</MenuItem>
+
+              <MenuItem value={3}>Week 3</MenuItem>
+
+              <MenuItem value={4}>Week 4</MenuItem>
+            </Select>
+          </FormControl>
+
+          <FormControl sx={{ minWidth: 160 }}>
+            <InputLabel>Status</InputLabel>
+
+            <Select
+              value={statusFilter}
+              label="Status"
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <MenuItem value="ALL">All Status</MenuItem>
+
+              <MenuItem value="ACTIVE">Active</MenuItem>
+
+              <MenuItem value="INACTIVE">Inactive</MenuItem>
+            </Select>
+          </FormControl>
+
+          <IconButton
+            aria-label="clear filters"
+            color="primary"
+            onClick={() => {
+              setSearch("");
+              setLevelFilter("ALL");
+              setWeekFilter("ALL");
+              setStatusFilter("ALL");
+            }}
+          >
+            <RefreshIcon />
+          </IconButton>
+        </Stack>
+      </Paper>
 
       {/* ========================================= */}
       {/* TABLE */}
@@ -170,14 +291,14 @@ export default function Branches() {
               </TableHead>
 
               <TableBody>
-                {branches.length === 0 ? (
+                {filteredBranches.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} align="center">
                       No branches found.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  branches.map((branch) => (
+                  filteredBranches.map((branch) => (
                     <TableRow key={branch._id} hover>
                       {/* Branch */}
 

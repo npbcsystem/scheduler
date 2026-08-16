@@ -16,28 +16,31 @@ import {
   Select,
   Stack,
   Typography,
+  Button,
 } from "@mui/material";
 
 import { getBranches } from "../services/branchService";
 import { getBranchProgress } from "../services/progressService";
+import ManualProgressDialog from "../components/dialogs/ManualProgressDialog";
 
 export default function Progress() {
   const [branches, setBranches] = useState([]);
 
-  const [selectedBranch, setSelectedBranch] =
-    useState("");
+  const [selectedBranch, setSelectedBranch] = useState("");
 
-  const [progress, setProgress] =
-    useState(null);
+  const [progress, setProgress] = useState(null);
 
-  const [loadingBranches, setLoadingBranches] =
-    useState(true);
+  const [loadingBranches, setLoadingBranches] = useState(true);
 
-  const [loadingProgress, setLoadingProgress] =
-    useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(false);
 
-  const [error, setError] =
-    useState("");
+  const [error, setError] = useState("");
+
+  const [manualDialogOpen, setManualDialogOpen] = useState(false);
+
+  const [selectedCourse, setSelectedCourse] = useState(null);
+
+  const [selectedProgressId, setSelectedProgressId] = useState(null);
 
   // --------------------------------------------------
   // Load branches
@@ -62,10 +65,7 @@ export default function Progress() {
     } catch (err) {
       console.error(err);
 
-      setError(
-        err.response?.data?.message ||
-          "Unable to load branches."
-      );
+      setError(err.response?.data?.message || "Unable to load branches.");
     } finally {
       setLoadingBranches(false);
     }
@@ -88,16 +88,14 @@ export default function Progress() {
       setLoadingProgress(true);
       setError("");
 
-      const data =
-        await getBranchProgress(branchId);
+      const data = await getBranchProgress(branchId);
 
       setProgress(data);
     } catch (err) {
       console.error(err);
 
       setError(
-        err.response?.data?.message ||
-          "Unable to load branch progress."
+        err.response?.data?.message || "Unable to load branch progress.",
       );
     } finally {
       setLoadingProgress(false);
@@ -141,16 +139,12 @@ export default function Progress() {
         sx={{ mb: 3 }}
       >
         <Box>
-          <Typography
-            variant="h4"
-            fontWeight="bold"
-          >
+          <Typography variant="h4" fontWeight="bold">
             Branch Progress
           </Typography>
 
           <Typography color="text.secondary">
-            Track academic progress by branch
-            and level.
+            Track academic progress by branch and level.
           </Typography>
         </Box>
 
@@ -159,24 +153,15 @@ export default function Progress() {
             minWidth: 280,
           }}
         >
-          <InputLabel>
-            Select Branch
-          </InputLabel>
+          <InputLabel>Select Branch</InputLabel>
 
           <Select
             value={selectedBranch}
             label="Select Branch"
-            onChange={(e) =>
-              setSelectedBranch(
-                e.target.value
-              )
-            }
+            onChange={(e) => setSelectedBranch(e.target.value)}
           >
             {branches.map((branch) => (
-              <MenuItem
-                key={branch._id}
-                value={branch._id}
-              >
+              <MenuItem key={branch._id} value={branch._id}>
                 {branch.name}
               </MenuItem>
             ))}
@@ -189,10 +174,7 @@ export default function Progress() {
       {/* ============================================ */}
 
       {error && (
-        <Alert
-          severity="error"
-          sx={{ mb: 3 }}
-        >
+        <Alert severity="error" sx={{ mb: 3 }}>
           {error}
         </Alert>
       )}
@@ -231,16 +213,11 @@ export default function Progress() {
               spacing={3}
             >
               <Box>
-                <Typography
-                  variant="h5"
-                  fontWeight="bold"
-                >
+                <Typography variant="h5" fontWeight="bold">
                   {progress.branch?.name}
                 </Typography>
 
-                <Typography
-                  color="text.secondary"
-                >
+                <Typography color="text.secondary">
                   {progress.branch?.region}
                 </Typography>
               </Box>
@@ -254,27 +231,17 @@ export default function Progress() {
                 }}
               >
                 <Stack spacing={1}>
-                  <Stack
-                    direction="row"
-                    justifyContent="space-between"
-                  >
-                    <Typography>
-                      Overall Progress
-                    </Typography>
+                  <Stack direction="row" justifyContent="space-between">
+                    <Typography>Overall Progress</Typography>
 
-                    <Typography
-                      fontWeight="bold"
-                    >
+                    <Typography fontWeight="bold">
                       {progress.overall.percentage}%
                     </Typography>
                   </Stack>
 
                   <LinearProgress
                     variant="determinate"
-                    value={
-                      progress.overall
-                        .percentage
-                    }
+                    value={progress.overall.percentage}
                     sx={{
                       height: 12,
                       borderRadius: 6,
@@ -286,29 +253,15 @@ export default function Progress() {
 
             {/* Overall statistics */}
 
-            <Grid
-              container
-              spacing={2}
-              sx={{ mt: 2 }}
-            >
+            <Grid container spacing={2} sx={{ mt: 2 }}>
               <Grid item xs={12} sm={4}>
-                <Card
-                  variant="outlined"
-                >
+                <Card variant="outlined">
                   <CardContent>
-                    <Typography
-                      variant="h4"
-                      fontWeight="bold"
-                    >
-                      {
-                        progress.overall
-                          .completed
-                      }
+                    <Typography variant="h4" fontWeight="bold">
+                      {progress.overall.completed}
                     </Typography>
 
-                    <Typography
-                      color="text.secondary"
-                    >
+                    <Typography color="text.secondary">
                       Completed Courses
                     </Typography>
                   </CardContent>
@@ -316,23 +269,13 @@ export default function Progress() {
               </Grid>
 
               <Grid item xs={12} sm={4}>
-                <Card
-                  variant="outlined"
-                >
+                <Card variant="outlined">
                   <CardContent>
-                    <Typography
-                      variant="h4"
-                      fontWeight="bold"
-                    >
-                      {
-                        progress.overall
-                          .remaining
-                      }
+                    <Typography variant="h4" fontWeight="bold">
+                      {progress.overall.remaining}
                     </Typography>
 
-                    <Typography
-                      color="text.secondary"
-                    >
+                    <Typography color="text.secondary">
                       Remaining Courses
                     </Typography>
                   </CardContent>
@@ -340,22 +283,13 @@ export default function Progress() {
               </Grid>
 
               <Grid item xs={12} sm={4}>
-                <Card
-                  variant="outlined"
-                >
+                <Card variant="outlined">
                   <CardContent>
-                    <Typography
-                      variant="h4"
-                      fontWeight="bold"
-                    >
-                      {
-                        progress.overall.total
-                      }
+                    <Typography variant="h4" fontWeight="bold">
+                      {progress.overall.total}
                     </Typography>
 
-                    <Typography
-                      color="text.secondary"
-                    >
+                    <Typography color="text.secondary">
                       Total Courses
                     </Typography>
                   </CardContent>
@@ -368,27 +302,13 @@ export default function Progress() {
           {/* LEVEL PROGRESS */}
           {/* ======================================== */}
 
-          <Typography
-            variant="h5"
-            fontWeight="bold"
-            sx={{ mb: 2 }}
-          >
+          <Typography variant="h5" fontWeight="bold" sx={{ mb: 2 }}>
             Progress by Level
           </Typography>
 
-          <Grid
-            container
-            spacing={3}
-          >
-            {Object.entries(
-              progress.levels
-            ).map(([level, data]) => (
-              <Grid
-                item
-                xs={12}
-                md={4}
-                key={level}
-              >
+          <Grid container spacing={3}>
+            {Object.entries(progress.levels).map(([level, data]) => (
+              <Grid item xs={12} md={4} key={level}>
                 <Card
                   sx={{
                     height: "100%",
@@ -401,20 +321,13 @@ export default function Progress() {
                       alignItems="center"
                       sx={{ mb: 1 }}
                     >
-                      <Typography
-                        variant="h6"
-                        fontWeight="bold"
-                      >
+                      <Typography variant="h6" fontWeight="bold">
                         {level}
                       </Typography>
 
                       <Chip
                         label={`${data.percentage}%`}
-                        color={
-                          data.percentage === 100
-                            ? "success"
-                            : "primary"
-                        }
+                        color={data.percentage === 100 ? "success" : "primary"}
                       />
                     </Stack>
 
@@ -423,9 +336,7 @@ export default function Progress() {
                       color="text.secondary"
                       sx={{ mb: 1 }}
                     >
-                      {data.completed} /{" "}
-                      {data.total} courses
-                      completed
+                      {data.completed} / {data.total} courses completed
                     </Typography>
 
                     <LinearProgress
@@ -438,12 +349,8 @@ export default function Progress() {
                       }}
                     />
 
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                    >
-                      {data.remaining} courses
-                      remaining
+                    <Typography variant="body2" color="text.secondary">
+                      {data.remaining} courses remaining
                     </Typography>
                   </CardContent>
                 </Card>
@@ -466,9 +373,7 @@ export default function Progress() {
             Course Progress
           </Typography>
 
-          {Object.entries(
-            progress.levels
-          ).map(([level, data]) => (
+          {Object.entries(progress.levels).map(([level, data]) => (
             <Paper
               key={level}
               sx={{
@@ -476,90 +381,55 @@ export default function Progress() {
                 mb: 3,
               }}
             >
-              <Typography
-                variant="h6"
-                fontWeight="bold"
-                sx={{ mb: 2 }}
-              >
+              <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
                 {level}
               </Typography>
 
-              <Grid
-                container
-                spacing={2}
-              >
+              <Grid container spacing={2}>
                 {/* Completed */}
 
-                <Grid
-                  item
-                  xs={12}
-                  md={6}
-                >
-                  <Typography
-                    fontWeight="bold"
-                    sx={{ mb: 1 }}
-                  >
+                <Grid item xs={12} md={6}>
+                  <Typography fontWeight="bold" sx={{ mb: 1 }}>
                     Completed Courses
                   </Typography>
 
-                  {data.completedCourses
-                    ?.length > 0 ? (
+                  {data.completedCourses?.length > 0 ? (
                     <Stack spacing={1}>
-                      {data.completedCourses.map(
-                        (item, index) => (
-                          <Box
-                            key={
-                              item.course?._id ||
-                              index
-                            }
-                            sx={{
-                              p: 1.5,
-                              borderRadius: 1,
-                              bgcolor:
-                                "success.50",
-                              border:
-                                "1px solid",
-                              borderColor:
-                                "success.light",
-                            }}
-                          >
-                            <Typography
-                              fontWeight="bold"
-                            >
-                              {
-                                item.course
-                                  ?.code
-                              }
-                            </Typography>
+                      {data.completedCourses.map((item, index) => (
+                        <Box
+                          key={item.course?._id || index}
+                          sx={{
+                            p: 1.5,
+                            borderRadius: 1,
+                            bgcolor: "success.50",
+                            border: "1px solid",
+                            borderColor: "success.light",
+                          }}
+                        >
+                          <Typography fontWeight="bold">
+                            {item.course?.code}
+                          </Typography>
 
-                            <Typography
-                              variant="body2"
-                            >
-                              {
-                                item.course
-                                  ?.name
-                              }
-                            </Typography>
+                          <Typography variant="body2">
+                            {item.course?.name}
+                          </Typography>
 
-                            {item.completedDate && (
-                              <Typography
-                                variant="caption"
-                                color="text.secondary"
-                              >
-                                Completed:{" "}
-                                {new Date(
-                                  item.completedDate
-                                ).toLocaleDateString()}
-                              </Typography>
-                            )}
-                          </Box>
-                        )
-                      )}
+                          {item.completedDate && (
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
+                              Completed:{" "}
+                              {new Date(
+                                item.completedDate,
+                              ).toLocaleDateString()}
+                            </Typography>
+                          )}
+                        </Box>
+                      ))}
                     </Stack>
                   ) : (
-                    <Typography
-                      color="text.secondary"
-                    >
+                    <Typography color="text.secondary">
                       No courses completed yet.
                     </Typography>
                   )}
@@ -567,52 +437,46 @@ export default function Progress() {
 
                 {/* Remaining */}
 
-                <Grid
-                  item
-                  xs={12}
-                  md={6}
-                >
-                  <Typography
-                    fontWeight="bold"
-                    sx={{ mb: 1 }}
-                  >
+                <Grid item xs={12} md={6}>
+                  <Typography fontWeight="bold" sx={{ mb: 1 }}>
                     Remaining Courses
                   </Typography>
 
-                  {data.remainingCourses
-                    ?.length > 0 ? (
+                  {data.remainingCourses?.length > 0 ? (
                     <Stack spacing={1}>
-                      {data.remainingCourses.map(
-                        (course) => (
-                          <Box
-                            key={course._id}
-                            sx={{
-                              p: 1.5,
-                              borderRadius: 1,
-                              bgcolor:
-                                "action.hover",
+                      {data.remainingCourses.map((course) => (
+                        <Box
+                          key={course._id}
+                          sx={{
+                            p: 1.5,
+                            borderRadius: 1,
+                            bgcolor: "action.hover",
+                          }}
+                        >
+                          <Typography fontWeight="bold">
+                            {course.code}
+                          </Typography>
+
+                          <Typography variant="body2">{course.name}</Typography>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            sx={{ mt: 1 }}
+                            onClick={() => {
+                              setSelectedCourse(course);
+
+                              setSelectedProgressId(data.progressId);
+
+                              setManualDialogOpen(true);
                             }}
                           >
-                            <Typography
-                              fontWeight="bold"
-                            >
-                              {course.code}
-                            </Typography>
-
-                            <Typography
-                              variant="body2"
-                            >
-                              {course.name}
-                            </Typography>
-                          </Box>
-                        )
-                      )}
+                            Mark Complete
+                          </Button>
+                        </Box>
+                      ))}
                     </Stack>
                   ) : (
-                    <Typography
-                      color="success.main"
-                      fontWeight="bold"
-                    >
+                    <Typography color="success.main" fontWeight="bold">
                       All courses completed.
                     </Typography>
                   )}
@@ -623,11 +487,24 @@ export default function Progress() {
         </>
       ) : (
         <Paper sx={{ p: 4 }}>
-          <Typography>
-            Select a branch to view progress.
-          </Typography>
+          <Typography>Select a branch to view progress.</Typography>
         </Paper>
       )}
+      <ManualProgressDialog
+        open={manualDialogOpen}
+        onClose={() => {
+          setManualDialogOpen(false);
+          setSelectedCourse(null);
+          setSelectedProgressId(null);
+        }}
+        progressId={selectedProgressId}
+        course={selectedCourse}
+        onCompleted={() => {
+          if (selectedBranch) {
+            loadProgress(selectedBranch);
+          }
+        }}
+      />
     </Box>
   );
 }

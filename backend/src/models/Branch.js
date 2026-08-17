@@ -5,41 +5,39 @@ const branchSchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
-      unique: true
+      unique: true,
     },
 
     region: {
       type: String,
-      required: true
+      required: true,
     },
 
     week: {
       type: Number,
       required: true,
       min: 1,
-      max: 5
+      max: 5,
+    },
+    coordinator: {
+      name: String,
+      phone: String,
+      email: String,
     },
 
     levels: [
       {
         type: String,
-        enum: [
-          "CERTIFICATE",
-          "ASSOCIATE",
-          "DIPLOMA"
-        ]
-      }
+        enum: ["CERTIFICATE", "ASSOCIATE", "DIPLOMA"],
+      },
     ],
 
     active: {
       type: Boolean,
-      default: true
-    }
+      default: true,
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-export default mongoose.model(
-  "Branch",
-  branchSchema
-);
+export default mongoose.model("Branch", branchSchema);

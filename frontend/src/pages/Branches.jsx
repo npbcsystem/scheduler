@@ -22,8 +22,8 @@ import {
   MenuItem,
   Select,
 } from "@mui/material";
-import IconButton from '@mui/material/IconButton';
-import RefreshIcon from '@mui/icons-material/Refresh';
+import IconButton from "@mui/material/IconButton";
+import RefreshIcon from "@mui/icons-material/Refresh";
 
 import EditBranchDialog from "../components/dialogs/EditBranchDialog";
 
@@ -271,6 +271,10 @@ export default function Branches() {
                   <TableCell>
                     <b>Region</b>
                   </TableCell>
+                  
+                  <TableCell>
+                    <b>Coordinator</b>
+                  </TableCell>
 
                   <TableCell>
                     <b>Levels</b>
@@ -309,6 +313,19 @@ export default function Branches() {
                       {/* Region */}
 
                       <TableCell>{branch.region || "-"}</TableCell>
+
+                      {/* Coordinator */}
+                      <TableCell>
+                        <Typography fontWeight="bold">
+                          {branch.coordinatorName || "Not assigned"}
+                        </Typography>
+
+                        {branch.coordinatorPhone && (
+                          <Typography variant="body2" color="text.secondary">
+                            {branch.coordinatorPhone}
+                          </Typography>
+                        )}
+                      </TableCell>
 
                       {/* Levels */}
 

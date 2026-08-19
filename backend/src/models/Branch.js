@@ -19,10 +19,14 @@ const branchSchema = new mongoose.Schema(
       min: 1,
       max: 5,
     },
-    coordinator: {
-      name: String,
-      phone: String,
-      email: String,
+    coordinatorName: {
+      type: String,
+      trim: true,
+    },
+
+    coordinatorPhone: {
+      type: String,
+      trim: true,
     },
 
     levels: [

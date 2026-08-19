@@ -8,6 +8,8 @@ import lecturerRoutes from "./routes/lecturerRoutes.js";
 import progressRoutes from "./routes/progressRoutes.js";
 import scheduleRoutes from "./routes/scheduleRoutes.js";
 import pendingAssignmentRoutes from "./routes/pendingAssignmentRoutes.js";
+import smsRoutes from "./routes/smsRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 
 const app = express();
 
@@ -21,16 +23,15 @@ app.use("/api/lecturers", lecturerRoutes);
 app.use("/api/progress", progressRoutes);
 app.use("/api/schedule", scheduleRoutes);
 app.use("/api/pending-assignments", pendingAssignmentRoutes);
+
+app.use("/api/sms", smsRoutes);
+app.use("/api/notifications", notificationRoutes);
 // app.use("/api/import", importRoutes);
 
 app.get("/", (req, res) => {
   res.json({
     message: "NPBC Scheduler API",
   });
-});
-
-app.get("/test", (req, res) => {
-  res.send("API Working");
 });
 
 app.use("/api/test", testRoutes);

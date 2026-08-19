@@ -9,7 +9,7 @@ export const createBranch = async (req, res) => {
     res.status(201).json(branch);
   } catch (error) {
     res.status(500).json({
-      message: error.message
+      message: error.message,
     });
   }
 };
@@ -21,7 +21,7 @@ export const getBranches = async (req, res) => {
     res.json(branches);
   } catch (error) {
     res.status(500).json({
-      message: error.message
+      message: error.message,
     });
   }
 };
@@ -32,23 +32,21 @@ export const getBranch = async (req, res) => {
 
     if (!branch) {
       return res.status(404).json({
-        message: "Branch not found"
+        message: "Branch not found",
       });
     }
 
     res.json(branch);
   } catch (error) {
     res.status(500).json({
-      message: error.message
+      message: error.message,
     });
   }
 };
 
 export const updateBranch = async (req, res) => {
   try {
-    const branch = await Branch.findById(
-      req.params.id
-    );
+    const branch = await Branch.findById(req.params.id);
 
     if (!branch) {
       return res.status(404).json({
@@ -62,37 +60,30 @@ export const updateBranch = async (req, res) => {
       levels,
       week,
       active,
+      coordinatorName,
+      coordinatorPhone,
     } = req.body;
 
     // ---------------------------------------------
     // Validate levels
     // ---------------------------------------------
 
-    const allowedLevels = [
-      "CERTIFICATE",
-      "ASSOCIATE",
-      "DIPLOMA",
-    ];
+    const allowedLevels = ["CERTIFICATE", "ASSOCIATE", "DIPLOMA"];
 
     if (levels !== undefined) {
-
       if (!Array.isArray(levels)) {
         return res.status(400).json({
-          message:
-            "Levels must be an array.",
+          message: "Levels must be an array.",
         });
       }
 
-      const invalidLevels =
-        levels.filter(
-          (level) =>
-            !allowedLevels.includes(level)
-        );
+      const invalidLevels = levels.filter(
+        (level) => !allowedLevels.includes(level),
+      );
 
       if (invalidLevels.length > 0) {
         return res.status(400).json({
-          message:
-            `Invalid levels: ${invalidLevels.join(", ")}`,
+          message: `Invalid levels: ${invalidLevels.join(", ")}`,
         });
       }
     }
@@ -101,15 +92,9 @@ export const updateBranch = async (req, res) => {
     // Validate week
     // ---------------------------------------------
 
-    if (
-      week !== undefined &&
-      ![1, 2, 3, 4].includes(
-        Number(week)
-      )
-    ) {
+    if (week !== undefined && ![1, 2, 3, 4].includes(Number(week))) {
       return res.status(400).json({
-        message:
-          "Week must be between 1 and 4.",
+        message: "Week must be between 1 and 4.",
       });
     }
 
@@ -118,41 +103,28 @@ export const updateBranch = async (req, res) => {
     // ---------------------------------------------
 
     if (levels !== undefined) {
+      const oldLevels = branch.levels || [];
 
-      const oldLevels =
-        branch.levels || [];
-
-      const removedLevels =
-        oldLevels.filter(
-          (level) =>
-            !levels.includes(level)
-        );
+      const removedLevels = oldLevels.filter(
+        (level) => !levels.includes(level),
+      );
 
       for (const level of removedLevels) {
+        const progress = await Progress.findOne({
+          branch: branch._id,
+          level,
+        });
 
-        const progress =
-          await Progress.findOne({
-            branch: branch._id,
-            level,
-          });
+        const scheduleCount = await Schedule.countDocuments({
+          branch: branch._id,
+          level,
+        });
 
-        const scheduleCount =
-          await Schedule.countDocuments({
-            branch: branch._id,
-            level,
-          });
-
-        if (
-          progress ||
-          scheduleCount > 0
-        ) {
-
+        if (progress || scheduleCount > 0) {
           return res.status(409).json({
-            message:
-              `Cannot remove ${level}. This branch already has academic records for this level.`,
+            message: `Cannot remove ${level}. This branch already has academic records for this level.`,
             level,
-            progressExists:
-              !!progress,
+            progressExists: !!progress,
             scheduleCount,
           });
         }
@@ -183,16 +155,19 @@ export const updateBranch = async (req, res) => {
       branch.active = active;
     }
 
+    if (coordinatorName !== undefined) {
+      branch.coordinatorName = coordinatorName;
+    }
+
+    if (coordinatorPhone !== undefined) {
+      branch.coordinatorPhone = coordinatorPhone;
+    }
+
     await branch.save();
 
     res.json(branch);
-
   } catch (error) {
-
-    console.error(
-      "UPDATE BRANCH ERROR:",
-      error
-    );
+    console.error("UPDATE BRANCH ERROR:", error);
 
     res.status(500).json({
       message: error.message,
@@ -202,22 +177,20 @@ export const updateBranch = async (req, res) => {
 
 export const deleteBranch = async (req, res) => {
   try {
-    const branch = await Branch.findByIdAndDelete(
-      req.params.id
-    );
+    const branch = await Branch.findByIdAndDelete(req.params.id);
 
     if (!branch) {
       return res.status(404).json({
-        message: "Branch not found"
+        message: "Branch not found",
       });
     }
 
     res.json({
-      message: "Branch deleted"
+      message: "Branch deleted",
     });
   } catch (error) {
     res.status(500).json({
-      message: error.message
+      message: error.message,
     });
   }
 };

@@ -28,12 +28,20 @@ export default function EditBranchDialog({ open, onClose, branch, onUpdated }) {
 
   const [active, setActive] = useState(true);
 
+  const [coordinatorName, setCoordinatorName] = useState("");
+
+  const [coordinatorPhone, setCoordinatorPhone] = useState("");
+
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!branch) return;
 
     setName(branch.name || "");
+
+    setCoordinatorName(branch?.coordinatorName || "");
+
+    setCoordinatorPhone(branch?.coordinatorPhone || "");
 
     setRegion(branch.region || "");
 
@@ -54,6 +62,9 @@ export default function EditBranchDialog({ open, onClose, branch, onUpdated }) {
         levels,
         week,
         active,
+
+        coordinatorName,
+        coordinatorPhone,
       });
 
       onUpdated();
@@ -86,6 +97,21 @@ export default function EditBranchDialog({ open, onClose, branch, onUpdated }) {
             label="Branch Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
+          />
+
+          <TextField
+            fullWidth
+            label="Coordinator Name"
+            value={coordinatorName}
+            onChange={(e) => setCoordinatorName(e.target.value)}
+          />
+
+          <TextField
+            fullWidth
+            label="Coordinator Phone"
+            value={coordinatorPhone}
+            onChange={(e) => setCoordinatorPhone(e.target.value)}
+            placeholder="0712345678"
           />
 
           <FormControl fullWidth>

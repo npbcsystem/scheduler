@@ -24,6 +24,10 @@ export default function AddBranchDialog({ open, onClose, onCreated }) {
   const [week, setWeek] = useState(1);
   const [active, setActive] = useState(true);
 
+  const [coordinatorName, setCoordinatorName] = useState("");
+
+  const [coordinatorPhone, setCoordinatorPhone] = useState("");
+
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
@@ -36,6 +40,8 @@ export default function AddBranchDialog({ open, onClose, onCreated }) {
         levels,
         week,
         active,
+        coordinatorName,
+        coordinatorPhone,
       });
 
       onCreated();
@@ -68,6 +74,20 @@ export default function AddBranchDialog({ open, onClose, onCreated }) {
             label="Branch Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
+          />
+          <TextField
+            fullWidth
+            label="Coordinator Name"
+            value={coordinatorName}
+            onChange={(e) => setCoordinatorName(e.target.value)}
+          />
+
+          <TextField
+            fullWidth
+            label="Coordinator Phone"
+            value={coordinatorPhone}
+            onChange={(e) => setCoordinatorPhone(e.target.value)}
+            placeholder="0712345678"
           />
 
           <FormControl fullWidth>

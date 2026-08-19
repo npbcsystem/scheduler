@@ -54,3 +54,16 @@ export const completeMonth = async (month, year) => {
 
   return response.data;
 };
+
+export const notifyWeek = async (week, month, year) => {
+  const response = await api.post(
+    "/notifications/week",
+    {
+      week,
+      month,
+      year,
+    }
+  );
+
+  return response.data;
+};

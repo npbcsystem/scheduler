@@ -28,18 +28,23 @@ export const notifyWeek = async ({
     week: Number(week),
     month: Number(month),
     year: Number(year),
-    status: {
-      $in: ["APPROVED", "COMPLETED"],
-    },
+
+    // Only notify approved upcoming classes
+    status: "APPROVED",
   })
     .populate("branch")
     .populate("course")
     .populate("lecturer");
 
-  const recipients = new Map();
+  // --------------------------------------------------
+  // Separate recipients
+  // --------------------------------------------------
+
+  const lecturerRecipients = new Map();
+  const coordinatorRecipients = new Map();
 
   // --------------------------------------------------
-  // Build recipients
+  // Build notifications
   // --------------------------------------------------
 
   for (const schedule of schedules) {
@@ -49,79 +54,112 @@ export const notifyWeek = async ({
 
     if (!branch) continue;
 
-    // ----------------------------------------------
-    // Lecturer
-    // ----------------------------------------------
+    // ==================================================
+    // LECTURER
+    // One lecturer = one class
+    // ==================================================
 
     if (lecturer?.phone) {
-      const phone =
-        formatPhone(lecturer.phone);
+      const phone = formatPhone(lecturer.phone);
 
       if (phone) {
         const message =
           `NPBC: You are scheduled to teach ` +
           `${course?.name || "a course"} ` +
           `at ${branch.name} Branch ` +
-          `for Week ${week}, ` +
-          `${month}/${year}. ` +
+          `during Week ${week}, ${month}/${year}. ` +
           `Please confirm your availability.`;
 
-        const key = `LECTURER-${phone}`;
+        // Use schedule ID so every assignment is distinct
+        const key = `LECTURER-${schedule._id}`;
 
-        if (!recipients.has(key)) {
-          recipients.set(key, {
-            phone,
-            name: lecturer.name,
-            type: "LECTURER",
-            messages: [],
-          });
-        }
-
-        recipients
-          .get(key)
-          .messages.push(message);
+        lecturerRecipients.set(key, {
+          phone,
+          name: lecturer.name,
+          type: "LECTURER",
+          branch: branch.name,
+          course: course?.name || "Unknown",
+          message,
+        });
       }
     }
 
-    // ----------------------------------------------
-    // Branch Coordinator
-    // ----------------------------------------------
+    // ==================================================
+    // COORDINATOR
+    // One coordinator gets ONE message for their branch
+    // ==================================================
 
     if (branch.coordinatorPhone) {
-      const phone =
-        formatPhone(
-          branch.coordinatorPhone
-        );
+      const phone = formatPhone(
+        branch.coordinatorPhone,
+      );
 
       if (phone) {
-        const message =
-          `NPBC: ${branch.name} is scheduled ` +
-          `for ${course?.name || "a class"} ` +
-          `during Week ${week}, ${month}/${year}. ` +
-          `Lecturer: ${lecturer?.name || "Not assigned"}. ` +
-          `Please coordinate the class.`;
+        const key = `COORDINATOR-${branch._id}`;
 
-        const key =
-          `COORDINATOR-${phone}-${branch._id}`;
-
-        if (!recipients.has(key)) {
-          recipients.set(key, {
+        if (!coordinatorRecipients.has(key)) {
+          coordinatorRecipients.set(key, {
             phone,
             name:
               branch.coordinatorName ||
               "Coordinator",
             type: "COORDINATOR",
             branch: branch.name,
-            messages: [],
+            classes: [],
           });
         }
 
-        recipients
+        coordinatorRecipients
           .get(key)
-          .messages.push(message);
+          .classes.push({
+            level: schedule.level,
+            course:
+              course?.name ||
+              "Unknown Course",
+            lecturer:
+              lecturer?.name ||
+              "Not assigned",
+          });
       }
     }
   }
+
+  // --------------------------------------------------
+  // Create coordinator messages
+  // --------------------------------------------------
+
+  const coordinatorMessages = [];
+
+  for (const coordinator of coordinatorRecipients.values()) {
+    const classDetails =
+      coordinator.classes
+        .map(
+          (item) =>
+            `${item.level}: ${item.course} ` +
+            `(${item.lecturer})`,
+        )
+        .join("; ");
+
+    const message =
+      `NPBC: ${coordinator.branch} classes ` +
+      `for Week ${week}, ${month}/${year}: ` +
+      `${classDetails}. ` +
+      `Please coordinate accordingly.`;
+
+    coordinatorMessages.push({
+      ...coordinator,
+      message,
+    });
+  }
+
+  // --------------------------------------------------
+  // Combine lecturer + coordinator notifications
+  // --------------------------------------------------
+
+  const notifications = [
+    ...lecturerRecipients.values(),
+    ...coordinatorMessages,
+  ];
 
   // --------------------------------------------------
   // Send SMS
@@ -129,31 +167,57 @@ export const notifyWeek = async ({
 
   const results = [];
 
-  for (const recipient of recipients.values()) {
+  for (const notification of notifications) {
     try {
-      // For now, send one SMS per assignment.
-      // We can optimize/group these later.
-      for (const message of recipient.messages) {
-        const result = await sendSMS(
-          recipient.phone,
-          message
-        );
+      console.log(
+        `Sending SMS to ${notification.name} ` +
+        `(${notification.phone})`,
+      );
 
-        results.push({
-          ...recipient,
-          message,
-          status: "SENT",
-          result,
-        });
-      }
-    } catch (error) {
+      const result = await sendSMS(
+        notification.phone,
+        notification.message,
+      );
+
       results.push({
-        ...recipient,
+        phone: notification.phone,
+        name: notification.name,
+        type: notification.type,
+        branch: notification.branch,
+        message: notification.message,
+        status: "SENT",
+        result,
+      });
+
+    } catch (error) {
+      console.error(
+        `SMS FAILED: ${notification.name}`,
+        error,
+      );
+
+      results.push({
+        phone: notification.phone,
+        name: notification.name,
+        type: notification.type,
+        branch: notification.branch,
+        message: notification.message,
         status: "FAILED",
         error: error.message,
       });
     }
   }
+
+  // --------------------------------------------------
+  // Summary
+  // --------------------------------------------------
+
+  const sent = results.filter(
+    (item) => item.status === "SENT",
+  ).length;
+
+  const failed = results.filter(
+    (item) => item.status === "FAILED",
+  ).length;
 
   return {
     success: true,
@@ -166,17 +230,11 @@ export const notifyWeek = async ({
 
     schedules: schedules.length,
 
-    recipients: recipients.size,
+    recipients: notifications.length,
 
-    sent: results.filter(
-      (item) =>
-        item.status === "SENT"
-    ).length,
+    sent,
 
-    failed: results.filter(
-      (item) =>
-        item.status === "FAILED"
-    ).length,
+    failed,
 
     results,
   };

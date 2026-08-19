@@ -24,8 +24,8 @@ import {
   Snackbar,
 } from "@mui/material";
 
-import IconButton from '@mui/material/IconButton';
-import RefreshIcon from '@mui/icons-material/Refresh';
+import IconButton from "@mui/material/IconButton";
+import RefreshIcon from "@mui/icons-material/Refresh";
 
 import {
   getSchedules,
@@ -36,6 +36,7 @@ import {
 } from "../services/scheduleService";
 import EditScheduleDialog from "../components/dialogs/EditScheduleDialog";
 import { getPendingAssignments } from "../services/pendingAssignmentService";
+import NotifyWeekDialog from "../components/dialogs/NotifyWeekDialog";
 
 export default function Schedules() {
   const [loading, setLoading] = useState(true);
@@ -57,6 +58,7 @@ export default function Schedules() {
   const [selectedPending, setSelectedPending] = useState(null);
 
   const [assignMode, setAssignMode] = useState(false);
+  const [notifyDialogOpen, setNotifyDialogOpen] = useState(false);
 
   // dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -274,7 +276,6 @@ export default function Schedules() {
         <Typography variant="h4" fontWeight="bold">
           Schedule Management
         </Typography>
-        
 
         <Button variant="contained" color="success" onClick={handleApproveWeek}>
           Approve Week
@@ -302,6 +303,19 @@ export default function Schedules() {
           disabled={loading}
         >
           Complete Month
+        </Button>
+        <Button
+          variant="contained"
+          color="info"
+          onClick={() => setNotifyDialogOpen(true)}
+          disabled={
+            weekFilter === "ALL" ||
+            filteredSchedules.filter(
+              (schedule) => schedule.status === "APPROVED",
+            ).length === 0
+          }
+        >
+          Notify Week
         </Button>
 
         <IconButton
@@ -578,6 +592,28 @@ export default function Schedules() {
           loadSchedules();
 
           loadPendingAssignments();
+        }}
+      />
+      <NotifyWeekDialog
+        open={notifyDialogOpen}
+        onClose={() => setNotifyDialogOpen(false)}
+        week={weekFilter}
+        month={monthFilter}
+        year={yearFilter}
+        schedulesCount={
+          filteredSchedules.filter((schedule) => schedule.status === "APPROVED")
+            .length
+        }
+        onSuccess={(result) => {
+          setSnackbarSeverity(result.failed > 0 ? "warning" : "success");
+
+          setSnackbarMessage(
+            `${result.sent} SMS notification${
+              result.sent === 1 ? "" : "s"
+            } sent successfully. ${result.failed} failed.`,
+          );
+
+          setSnackbarOpen(true);
         }}
       />
     </Container>

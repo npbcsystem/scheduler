@@ -56,11 +56,14 @@ export const getSchedules = async (req, res) => {
 // update lecturer's current assignments
 export const updateSchedule = async (req, res) => {
   try {
-    const { course, lecturer, status } = req.body;
+    const {
+      course,
+      lecturer,
+      status,
+    } = req.body;
 
-    const schedule = await Schedule.findById(req.params.id);
-
-    const previousStatus = schedule.status;
+    const schedule =
+      await Schedule.findById(req.params.id);
 
     if (!schedule) {
       return res.status(404).json({
@@ -68,39 +71,87 @@ export const updateSchedule = async (req, res) => {
       });
     }
 
-    //----------------------------------------------------
-    // Course changed?
-    //----------------------------------------------------
+    const previousStatus =
+      schedule.status;
 
-    if (course && course !== schedule.course.toString()) {
+    // --------------------------------------------------
+    // Validate lecturer can teach selected course
+    // --------------------------------------------------
+
+    if (course && lecturer) {
+      const lecturerDoc =
+        await Lecturer.findById(lecturer);
+
+      if (!lecturerDoc) {
+        return res.status(404).json({
+          message: "Lecturer not found.",
+        });
+      }
+
+      const canTeach =
+        lecturerDoc.courses.some(
+          (c) =>
+            c.toString() ===
+            course.toString(),
+        );
+
+      if (!canTeach) {
+        return res.status(400).json({
+          message:
+            "Selected lecturer cannot teach this course.",
+        });
+      }
+    }
+
+    // --------------------------------------------------
+    // Course changed?
+    // --------------------------------------------------
+
+    if (
+      course &&
+      course !==
+        schedule.course.toString()
+    ) {
       schedule.course = course;
     }
 
-    //----------------------------------------------------
+    // --------------------------------------------------
     // Lecturer changed?
-    //----------------------------------------------------
+    // --------------------------------------------------
 
-    if (lecturer && lecturer !== schedule.lecturer.toString()) {
-      //--------------------------------------------------
+    if (
+      lecturer &&
+      lecturer !==
+        schedule.lecturer.toString()
+    ) {
+      // -----------------------------------------------
       // Old lecturer
-      //--------------------------------------------------
+      // -----------------------------------------------
 
-      const oldLecturer = await Lecturer.findById(schedule.lecturer);
+      const oldLecturer =
+        await Lecturer.findById(
+          schedule.lecturer,
+        );
 
       if (oldLecturer) {
-        oldLecturer.currentAssignments = Math.max(
-          0,
-          oldLecturer.currentAssignments - 1,
-        );
+        oldLecturer.currentAssignments =
+          Math.max(
+            0,
+            oldLecturer.currentAssignments -
+              1,
+          );
 
         await oldLecturer.save();
       }
 
-      //--------------------------------------------------
+      // -----------------------------------------------
       // New lecturer
-      //--------------------------------------------------
+      // -----------------------------------------------
 
-      const newLecturer = await Lecturer.findById(lecturer);
+      const newLecturer =
+        await Lecturer.findById(
+          lecturer,
+        );
 
       if (newLecturer) {
         newLecturer.currentAssignments++;
@@ -108,101 +159,129 @@ export const updateSchedule = async (req, res) => {
         await newLecturer.save();
       }
 
-      schedule.lecturer = lecturer;
+      schedule.lecturer =
+        lecturer;
     }
 
-    //----------------------------------------------------
+    // --------------------------------------------------
     // Status
-    //----------------------------------------------------
+    // --------------------------------------------------
 
     if (status) {
       schedule.status = status;
 
-      //--------------------------------------------------
+      // -----------------------------------------------
       // Progress Record
-      //--------------------------------------------------
+      // -----------------------------------------------
 
-      let progress = await Progress.findOne({
-        branch: schedule.branch,
-        level: schedule.level,
-      });
-
-      if (!progress) {
-        progress = await Progress.create({
+      let progress =
+        await Progress.findOne({
           branch: schedule.branch,
           level: schedule.level,
-          completedCourses: [],
         });
+
+      if (!progress) {
+        progress =
+          await Progress.create({
+            branch: schedule.branch,
+            level: schedule.level,
+            completedCourses: [],
+          });
       }
 
-      //--------------------------------------------------
+      // -----------------------------------------------
       // APPROVED -> COMPLETED
-      //--------------------------------------------------
+      // -----------------------------------------------
 
-      if (previousStatus !== "COMPLETED" && status === "COMPLETED") {
-        const exists = progress.completedCourses.some(
-          (item) => item.course.toString() === schedule.course.toString(),
-        );
+      if (
+        previousStatus !==
+          "COMPLETED" &&
+        status === "COMPLETED"
+      ) {
+        const exists =
+          progress.completedCourses.some(
+            (item) =>
+              item.course.toString() ===
+              schedule.course.toString(),
+          );
 
         if (!exists) {
           progress.completedCourses.push({
             course: schedule.course,
 
-            lecturer: schedule.lecturer,
+            lecturer:
+              schedule.lecturer,
 
-            schedule: schedule._id,
+            schedule:
+              schedule._id,
 
-            completedDate: new Date(),
+            completedDate:
+              new Date(),
 
-            manuallyCompleted: false,
+            manuallyCompleted:
+              false,
           });
 
-          console.log("Course added to progress.");
+          console.log(
+            "Course added to progress.",
+          );
         }
       }
 
-      //--------------------------------------------------
+      // -----------------------------------------------
       // COMPLETED -> Anything Else
-      //--------------------------------------------------
+      // -----------------------------------------------
 
-      if (previousStatus === "COMPLETED" && status !== "COMPLETED") {
-        progress.completedCourses = progress.completedCourses.filter(
-          (item) => item.course.toString() !== schedule.course.toString(),
+      if (
+        previousStatus ===
+          "COMPLETED" &&
+        status !== "COMPLETED"
+      ) {
+        progress.completedCourses =
+          progress.completedCourses.filter(
+            (item) =>
+              item.course.toString() !==
+              schedule.course.toString(),
+          );
+
+        console.log(
+          "Course removed from progress.",
         );
-
-        console.log("Course removed from progress.");
       }
 
       await progress.save();
     }
 
+    // --------------------------------------------------
+    // Save schedule
+    // --------------------------------------------------
+
     await schedule.save();
 
-    const updated = await Schedule.findById(schedule._id)
-      .populate("branch")
-      .populate("course")
-      .populate("lecturer");
+    // --------------------------------------------------
+    // Return populated schedule
+    // --------------------------------------------------
+
+    const updated =
+      await Schedule.findById(
+        schedule._id,
+      )
+        .populate("branch")
+        .populate("course")
+        .populate("lecturer");
 
     res.json(updated);
+
   } catch (error) {
-    console.error("UPDATE SCHEDULE ERROR");
+    console.error(
+      "UPDATE SCHEDULE ERROR",
+    );
+
     console.error(error);
 
     res.status(500).json({
       message: error.message,
       stack: error.stack,
-    });
-  }
-
-  const lecturerDoc = await Lecturer.findById(lecturer);
-
-  if (
-    course &&
-    lecturer &&
-    !lecturerDoc.courses.some((c) => c.toString() === course)
-  ) {
-    return res.status(400).json({
-      message: "Selected lecturer cannot teach this course.",
     });
   }
 };

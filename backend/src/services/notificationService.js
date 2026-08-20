@@ -1,17 +1,23 @@
 import Schedule from "../models/Schedule.js";
 import { sendSMS } from "./smsService.js";
 
+// --------------------------------------------------
+// Format Kenyan phone number
+// --------------------------------------------------
+
 const formatPhone = (phone) => {
   if (!phone) return null;
 
-  let value = String(phone).trim();
+  let value = String(phone)
+    .trim()
+    .replace(/[\s-]/g, "");
 
-  // 0712345678 -> 254712345678
+  // 0714590488 -> 254714590488
   if (value.startsWith("0")) {
     return `254${value.substring(1)}`;
   }
 
-  // +254712345678 -> 254712345678
+  // +254714590488 -> 254714590488
   if (value.startsWith("+")) {
     return value.substring(1);
   }
@@ -19,147 +25,312 @@ const formatPhone = (phone) => {
   return value;
 };
 
+// --------------------------------------------------
+// Get actual Saturday for the selected week/month/year
+// --------------------------------------------------
+
+const getSaturdayForWeek = (
+  week,
+  month,
+  year
+) => {
+  const firstDay = new Date(
+    Number(year),
+    Number(month) - 1,
+    1
+  );
+
+  // Find first Saturday of the month
+  const firstSaturday =
+    1 +
+    ((6 - firstDay.getDay() + 7) % 7);
+
+  const saturdayDate =
+    firstSaturday +
+    (Number(week) - 1) * 7;
+
+  const date = new Date(
+    Number(year),
+    Number(month) - 1,
+    saturdayDate
+  );
+
+  const day =
+    String(date.getDate()).padStart(2, "0");
+
+  const monthNumber =
+    String(date.getMonth() + 1).padStart(
+      2,
+      "0"
+    );
+
+  const actualYear =
+    date.getFullYear();
+
+  return `${day}/${monthNumber}/${actualYear}`;
+};
+
+// --------------------------------------------------
+// Level display
+// --------------------------------------------------
+
+const getLevelLabel = (level) => {
+  switch (level) {
+    case "CERTIFICATE":
+      return "Lev. 1";
+
+    case "ASSOCIATE":
+      return "Lev. 2";
+
+    case "DIPLOMA":
+      return "Lev. 3";
+
+    default:
+      return level;
+  }
+};
+
+// --------------------------------------------------
+// Notify Week
+// --------------------------------------------------
+
 export const notifyWeek = async ({
   week,
   month,
   year,
 }) => {
-  const schedules = await Schedule.find({
-    week: Number(week),
-    month: Number(month),
-    year: Number(year),
+  const schedules =
+    await Schedule.find({
+      week: Number(week),
+      month: Number(month),
+      year: Number(year),
 
-    // Only notify approved upcoming classes
-    status: "APPROVED",
-  })
-    .populate("branch")
-    .populate("course")
-    .populate("lecturer");
-
-  // --------------------------------------------------
-  // Separate recipients
-  // --------------------------------------------------
-
-  const lecturerRecipients = new Map();
-  const coordinatorRecipients = new Map();
+      status: {
+        $in: [
+          "APPROVED",
+          "COMPLETED",
+        ],
+      },
+    })
+      .populate("branch")
+      .populate("course")
+      .populate("lecturer");
 
   // --------------------------------------------------
-  // Build notifications
+  // Actual Saturday
+  // --------------------------------------------------
+
+  const saturdayDate =
+    getSaturdayForWeek(
+      week,
+      month,
+      year
+    );
+
+  // --------------------------------------------------
+  // Group coordinator messages by branch
+  // --------------------------------------------------
+
+  const coordinatorGroups =
+    new Map();
+
+  // --------------------------------------------------
+  // Lecturer recipients
+  // --------------------------------------------------
+
+  const lecturerRecipients =
+    new Map();
+
+  // --------------------------------------------------
+  // Process schedules
   // --------------------------------------------------
 
   for (const schedule of schedules) {
-    const branch = schedule.branch;
-    const course = schedule.course;
-    const lecturer = schedule.lecturer;
+    const branch =
+      schedule.branch;
 
-    if (!branch) continue;
+    const course =
+      schedule.course;
+
+    const lecturer =
+      schedule.lecturer;
+
+    if (!branch || !course) {
+      continue;
+    }
 
     // ==================================================
-    // LECTURER
-    // One lecturer = one class
+    // LECTURER MESSAGE
     // ==================================================
 
     if (lecturer?.phone) {
-      const phone = formatPhone(lecturer.phone);
+      const phone =
+        formatPhone(
+          lecturer.phone
+        );
 
       if (phone) {
+        const coordinatorPhone =
+          formatPhone(
+            branch.coordinatorPhone
+          );
+
         const message =
-          `NPBC: You are scheduled to teach ` +
-          `${course?.name || "a course"} ` +
-          `at ${branch.name} Branch ` +
-          `during Week ${week}, ${month}/${year}. ` +
-          `Please confirm your availability.`;
+          `Praise the Lord and hope you are well. ` +
+          `This Saturday plan for ` +
+          `${course.name || "your class"} ` +
+          `at ${branch.name}. ` +
+          `Coordinator: ${coordinatorPhone || "N/A"}. ` +
+          `Kindly confirm on time and remember to submit ` +
+          `the class reports on Monday before 4:00 PM. ` +
+          `Blessings. ` +
+          `For inquiries, call ODEL 0115008558`;
 
-        // Use schedule ID so every assignment is distinct
-        const key = `LECTURER-${schedule._id}`;
+        const key =
+          `LECTURER-${phone}`;
 
-        lecturerRecipients.set(key, {
-          phone,
-          name: lecturer.name,
-          type: "LECTURER",
-          branch: branch.name,
-          course: course?.name || "Unknown",
-          message,
-        });
+        if (
+          !lecturerRecipients.has(
+            key
+          )
+        ) {
+          lecturerRecipients.set(
+            key,
+            {
+              phone,
+              name:
+                lecturer.name,
+              type: "LECTURER",
+              messages: [],
+            }
+          );
+        }
+
+        lecturerRecipients
+          .get(key)
+          .messages.push(
+            message
+          );
       }
     }
 
     // ==================================================
-    // COORDINATOR
-    // One coordinator gets ONE message for their branch
+    // COORDINATOR MESSAGE
     // ==================================================
 
-    if (branch.coordinatorPhone) {
-      const phone = formatPhone(
-        branch.coordinatorPhone,
-      );
+    if (
+      branch.coordinatorPhone
+    ) {
+      const phone =
+        formatPhone(
+          branch.coordinatorPhone
+        );
 
       if (phone) {
-        const key = `COORDINATOR-${branch._id}`;
+        const key =
+          `${branch._id}-${phone}`;
 
-        if (!coordinatorRecipients.has(key)) {
-          coordinatorRecipients.set(key, {
-            phone,
-            name:
-              branch.coordinatorName ||
-              "Coordinator",
-            type: "COORDINATOR",
-            branch: branch.name,
-            classes: [],
-          });
+        if (
+          !coordinatorGroups.has(
+            key
+          )
+        ) {
+          coordinatorGroups.set(
+            key,
+            {
+              phone,
+              name:
+                branch.coordinatorName ||
+                "Coordinator",
+              type:
+                "COORDINATOR",
+              branch:
+                branch.name,
+              classes: [],
+            }
+          );
         }
 
-        coordinatorRecipients
+        coordinatorGroups
           .get(key)
           .classes.push({
-            level: schedule.level,
+            level:
+              schedule.level,
+
             course:
-              course?.name ||
+              course.name ||
               "Unknown Course",
+
             lecturer:
               lecturer?.name ||
               "Not assigned",
+
+            lecturerPhone:
+              lecturer?.phone
+                ? formatPhone(
+                    lecturer.phone
+                  )
+                : null,
           });
       }
     }
   }
 
   // --------------------------------------------------
-  // Create coordinator messages
+  // Build coordinator SMS
   // --------------------------------------------------
 
-  const coordinatorMessages = [];
+  const coordinatorRecipients =
+    [];
 
-  for (const coordinator of coordinatorRecipients.values()) {
-    const classDetails =
-      coordinator.classes
-        .map(
-          (item) =>
-            `${item.level}: ${item.course} ` +
-            `(${item.lecturer})`,
-        )
-        .join("; ");
+  for (const coordinator of coordinatorGroups.values()) {
+    // Sort:
+    // Certificate -> Associate -> Diploma
 
-    const message =
-      `NPBC: ${coordinator.branch} classes ` +
-      `for Week ${week}, ${month}/${year}: ` +
-      `${classDetails}. ` +
-      `Please coordinate accordingly.`;
+    const levelOrder = {
+      CERTIFICATE: 1,
+      ASSOCIATE: 2,
+      DIPLOMA: 3,
+    };
 
-    coordinatorMessages.push({
+    coordinator.classes.sort(
+      (a, b) =>
+        (levelOrder[a.level] ||
+          99) -
+        (levelOrder[b.level] ||
+          99)
+    );
+
+    let message =
+      `Shalom, Week ${week} Saturday Class ${saturdayDate}\n`;
+
+    for (const classItem of coordinator.classes) {
+      message +=
+        `${getLevelLabel(
+          classItem.level
+        )} ` +
+        `${classItem.course} - ` +
+        `${classItem.lecturer}`;
+
+      if (
+        classItem.lecturerPhone
+      ) {
+        message +=
+          ` ${classItem.lecturerPhone}`;
+      }
+
+      message += "\n";
+    }
+
+    message +=
+      `Blessings.\n` +
+      `For inquiries, call ODEL 0115008558`;
+
+    coordinatorRecipients.push({
       ...coordinator,
       message,
     });
   }
-
-  // --------------------------------------------------
-  // Combine lecturer + coordinator notifications
-  // --------------------------------------------------
-
-  const notifications = [
-    ...lecturerRecipients.values(),
-    ...coordinatorMessages,
-  ];
 
   // --------------------------------------------------
   // Send SMS
@@ -167,74 +338,156 @@ export const notifyWeek = async ({
 
   const results = [];
 
-  for (const notification of notifications) {
-    try {
-      console.log(
-        `Sending SMS to ${notification.name} ` +
-        `(${notification.phone})`,
-      );
+  // --------------------------------------------------
+  // Send lecturer messages
+  // --------------------------------------------------
 
-      const result = await sendSMS(
-        notification.phone,
-        notification.message,
-      );
+  for (
+    const recipient of lecturerRecipients.values()
+  ) {
+    for (
+      const message of recipient.messages
+    ) {
+      try {
+        const result =
+          await sendSMS(
+            recipient.phone,
+            message
+          );
+
+        results.push({
+          phone:
+            recipient.phone,
+
+          name:
+            recipient.name,
+
+          type:
+            recipient.type,
+
+          message,
+
+          status: "SENT",
+
+          result,
+        });
+      } catch (error) {
+        results.push({
+          phone:
+            recipient.phone,
+
+          name:
+            recipient.name,
+
+          type:
+            recipient.type,
+
+          message,
+
+          status: "FAILED",
+
+          error:
+            error.message,
+        });
+      }
+    }
+  }
+
+  // --------------------------------------------------
+  // Send coordinator messages
+  // --------------------------------------------------
+
+  for (
+    const recipient of coordinatorRecipients
+  ) {
+    try {
+      const result =
+        await sendSMS(
+          recipient.phone,
+          recipient.message
+        );
 
       results.push({
-        phone: notification.phone,
-        name: notification.name,
-        type: notification.type,
-        branch: notification.branch,
-        message: notification.message,
+        phone:
+          recipient.phone,
+
+        name:
+          recipient.name,
+
+        type:
+          recipient.type,
+
+        branch:
+          recipient.branch,
+
+        message:
+          recipient.message,
+
         status: "SENT",
+
         result,
       });
-
     } catch (error) {
-      console.error(
-        `SMS FAILED: ${notification.name}`,
-        error,
-      );
-
       results.push({
-        phone: notification.phone,
-        name: notification.name,
-        type: notification.type,
-        branch: notification.branch,
-        message: notification.message,
+        phone:
+          recipient.phone,
+
+        name:
+          recipient.name,
+
+        type:
+          recipient.type,
+
+        branch:
+          recipient.branch,
+
+        message:
+          recipient.message,
+
         status: "FAILED",
-        error: error.message,
+
+        error:
+          error.message,
       });
     }
   }
 
   // --------------------------------------------------
-  // Summary
+  // Return result
   // --------------------------------------------------
-
-  const sent = results.filter(
-    (item) => item.status === "SENT",
-  ).length;
-
-  const failed = results.filter(
-    (item) => item.status === "FAILED",
-  ).length;
 
   return {
     success: true,
 
-    week: Number(week),
+    week:
+      Number(week),
 
-    month: Number(month),
+    month:
+      Number(month),
 
-    year: Number(year),
+    year:
+      Number(year),
 
-    schedules: schedules.length,
+    saturdayDate,
 
-    recipients: notifications.length,
+    schedules:
+      schedules.length,
 
-    sent,
+    recipients:
+      lecturerRecipients.size +
+      coordinatorRecipients.length,
 
-    failed,
+    sent:
+      results.filter(
+        (item) =>
+          item.status === "SENT"
+      ).length,
+
+    failed:
+      results.filter(
+        (item) =>
+          item.status === "FAILED"
+      ).length,
 
     results,
   };

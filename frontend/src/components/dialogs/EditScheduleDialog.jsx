@@ -12,12 +12,11 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Chip,
+  Box,
 } from "@mui/material";
 
-import {
-  getLecturers,
-  getLecturersByCourse,
-} from "../../services/lecturerService";
+import { getLecturersByCourseAvailability } from "../../services/lecturerService";
 import { updateSchedule } from "../../services/scheduleService";
 import { getRemainingCourses } from "../../services/progressService";
 import { assignPendingAssignment } from "../../services/pendingAssignmentService";
@@ -70,11 +69,23 @@ export default function EditScheduleDialog({
 
   const loadLecturers = async (courseId) => {
     try {
-      const data = await getLecturersByCourse(courseId);
+      if (!current || !courseId) {
+        return;
+      }
+
+      const data = await getLecturersByCourseAvailability(
+        courseId,
+        current.week,
+        current.month,
+        current.year,
+        assignMode ? "" : current._id,
+      );
 
       setLecturers(data);
     } catch (err) {
-      console.log(err);
+      console.error("LOAD AVAILABLE LECTURERS ERROR:", err);
+
+      setLecturers([]);
     }
   };
 
@@ -181,21 +192,72 @@ export default function EditScheduleDialog({
               value={selectedLecturer}
               onChange={(e) => setSelectedLecturer(e.target.value)}
             >
-              {lecturers.map((lecturer) => (
-                <MenuItem key={lecturer._id} value={lecturer._id}>
-                  <div>
-                    <strong>{lecturer.name}</strong>
+              {lecturers.map((lecturer) => {
+                const assigned = lecturer.assignedThisWeek;
 
-                    <br />
+                const isCurrentLecturer = lecturer._id === selectedLecturer;
 
-                    <small>
-                      Assignments: {lecturer.currentAssignments}
-                      {" / "}
-                      {lecturer.maxAssignmentsPerMonth}
-                    </small>
-                  </div>
-                </MenuItem>
-              ))}
+                const disabled = assigned && !isCurrentLecturer;
+
+                return (
+                  <MenuItem
+                    key={lecturer._id}
+                    value={lecturer._id}
+                    disabled={disabled}
+                    sx={{
+                      "&.Mui-selected": {
+                        backgroundColor: "primary.main",
+                        color: "primary.contrastText",
+                      },
+
+                      "&.Mui-selected:hover": {
+                        backgroundColor: "primary.dark",
+                      },
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: "100%",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        gap: 2,
+                      }}
+                    >
+                      <Box>
+                        <Typography fontWeight="bold">
+                          {lecturer.name}
+                        </Typography>
+
+                        {/* <Typography variant="caption">
+                          Assignments: {lecturer.currentAssignments || 0}
+                          {" / "}
+                          {lecturer.maxAssignmentsPerMonth}
+                        </Typography> */}
+                      </Box>
+
+                      <Chip
+                        size="small"
+                        label={
+                          assigned
+                            ? isCurrentLecturer
+                              ? "Current"
+                              : "Assigned"
+                            : "Available"
+                        }
+                        color={
+                          assigned
+                            ? isCurrentLecturer
+                              ? "warning"
+                              : "error"
+                            : "success"
+                        }
+                        variant="outlined"
+                      />
+                    </Box>
+                  </MenuItem>
+                );
+              })}
             </Select>
           </FormControl>
 

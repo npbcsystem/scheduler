@@ -71,10 +71,10 @@ export default function EditBranchDialog({ open, onClose, branch, onUpdated }) {
 
       onClose();
     } catch (error) {
-      console.error("UPDATE BRANCH ERROR:", error);
+      console.error("UPDATE CENTER ERROR:", error);
 
       const message =
-        error.response?.data?.message || "Unable to update branch.";
+        error.response?.data?.message || "Unable to update center.";
 
       alert(message);
     } finally {
@@ -88,7 +88,7 @@ export default function EditBranchDialog({ open, onClose, branch, onUpdated }) {
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>Edit Branch</DialogTitle>
+      <DialogTitle>Edit Center</DialogTitle>
 
       <DialogContent>
         <Stack spacing={3} sx={{ mt: 1 }}>

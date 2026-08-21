@@ -55,9 +55,9 @@ export default function AddBranchDialog({ open, onClose, onCreated }) {
       setWeek(1);
       setActive(true);
     } catch (error) {
-      console.error("CREATE BRANCH ERROR:", error);
+      console.error("CREATE CENTER ERROR:", error);
 
-      alert(error.response?.data?.message || "Unable to create branch.");
+      alert(error.response?.data?.message || "Unable to create center.");
     } finally {
       setSaving(false);
     }
@@ -65,13 +65,13 @@ export default function AddBranchDialog({ open, onClose, onCreated }) {
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>Add Branch</DialogTitle>
+      <DialogTitle>Add Center</DialogTitle>
 
       <DialogContent>
         <Stack spacing={3} sx={{ mt: 1 }}>
           <TextField
             fullWidth
-            label="Branch Name"
+            label="Center Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />

@@ -177,10 +177,10 @@ export const notifyWeek = async ({
 
         const message =
           `Praise the Lord and hope you are well. ` +
-          `This Saturday plan for ` +
+          `This Saturday  ${saturdayDate} plan for ` +
           `${course.name || "your class"} ` +
           `at ${branch.name}. ` +
-          `Coordinator: ${coordinatorPhone || "N/A"}. ` +
+          `Coordinator: +${coordinatorPhone || "N/A"}. ` +
           `Kindly confirm on time and remember to submit ` +
           `the class reports on Monday before 4:00 PM. ` +
           `Blessings. ` +
@@ -316,7 +316,7 @@ export const notifyWeek = async ({
         classItem.lecturerPhone
       ) {
         message +=
-          ` ${classItem.lecturerPhone}`;
+          ` +${classItem.lecturerPhone}`;
       }
 
       message += "\n";

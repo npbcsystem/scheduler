@@ -11,7 +11,7 @@ export default function Layout() {
         height: "100vh",
         width: "100vw",
         overflow: "hidden", // Prevents body-level scrolling
-        backgroundColor: "#f8fafc",
+        background: "linear-gradient(135deg, #F7F9FC 0%, #F1F5FA 100%)",
       }}
     >
       <Sidebar />
@@ -34,7 +34,7 @@ export default function Layout() {
           sx={{
             flexGrow: 1,
             overflowY: "auto",
-            p: { xs: 2, md: 3.5 },
+            p: { xs: 2, md: 4 },
           }}
         >
           <Outlet />

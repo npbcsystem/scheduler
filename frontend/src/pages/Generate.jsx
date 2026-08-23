@@ -61,10 +61,19 @@ export default function Generate() {
   };
 
   return (
-    <Container maxWidth="md">
-      <Card>
-        <CardContent>
-          <Typography variant="h4" gutterBottom fontWeight="bold">
+    <Container maxWidth="md" sx={{ py: { xs: 1, md: 2 } }}>
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h4" gutterBottom>
+          Build your weekly schedule
+        </Typography>
+        <Typography color="text.secondary">
+          Select a teaching period and intelligently assign the available lecturers.
+        </Typography>
+      </Box>
+      <Card sx={{ overflow: "hidden" }}>
+        <Box sx={{ height: 5, background: "linear-gradient(90deg, #1769E0, #00A78E)" }} />
+        <CardContent sx={{ p: { xs: 2.5, md: 4 } }}>
+          <Typography variant="h5" gutterBottom>
             Generate Schedule
           </Typography>
 
@@ -86,7 +95,7 @@ export default function Generate() {
 
           <Stack spacing={3}>
             <Box>
-              <Typography gutterBottom fontWeight="bold">
+              <Typography gutterBottom fontWeight="bold" sx={{ color: "text.primary" }}>
                 Schedule Period
               </Typography>
 

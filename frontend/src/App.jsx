@@ -1,5 +1,4 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import CssBaseline from "@mui/material/CssBaseline";
 
 import Layout from "./components/layout/Layout";
 import Dashboard from "./pages/Dashboard";
@@ -14,7 +13,6 @@ import Reports from "./pages/Reports";
 export default function App() {
   return (
     <BrowserRouter>
-      <CssBaseline />
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Schedules />} />

@@ -38,30 +38,30 @@ export default function Sidebar() {
       sx={{
         width: 260,
         flexShrink: 0,
-        backgroundColor: "#0F172A",
-        color: "#94A3B8",
+        background: "linear-gradient(180deg, #102A43 0%, #0B2239 100%)",
+        color: "#A9BCD0",
         height: "100vh",
         display: "flex",
         flexDirection: "column",
-        borderRight: "1px solid #1E293B",
+        borderRight: "1px solid rgba(255,255,255,0.08)",
       }}
     >
-      <Toolbar sx={{ px: 3, py: 2 }}>
+      <Toolbar sx={{ px: 3, py: 2.5, minHeight: 76 }}>
         <Box>
           <Typography
             variant="h6"
             fontWeight={700}
-            sx={{ color: "#F8FAFC", letterSpacing: 0.5 }}
+            sx={{ color: "#FFFFFF", letterSpacing: 0.1, fontSize: "1.1rem" }}
           >
             NPBC Scheduler
           </Typography>
-          <Typography variant="caption" sx={{ color: "#64748B", fontWeight: 500 }}>
+          <Typography variant="caption" sx={{ color: "#8EA5BC", fontWeight: 500 }}>
             Academic Management
           </Typography>
         </Box>
       </Toolbar>
 
-      <Divider sx={{ borderColor: "#1E293B", mb: 1 }} />
+      <Divider sx={{ borderColor: "rgba(255,255,255,0.10)", mb: 1.5 }} />
 
       <List sx={{ px: 1.5, flexGrow: 1, overflowY: "auto" }}>
         {menuItems.map((item) => (
@@ -74,25 +74,25 @@ export default function Sidebar() {
               mb: 0.5,
               py: 1.2,
               px: 2,
-              color: "#94A3B8",
+              color: "#A9BCD0",
               transition: "all 0.2s ease-in-out",
               "& .MuiListItemIcon-root": {
-                color: "#64748B",
+                color: "#86A0BA",
                 minWidth: 40,
                 transition: "color 0.2s ease-in-out",
               },
               "&:hover": {
-                backgroundColor: "rgba(255, 255, 255, 0.05)",
-                color: "#F1F5F9",
+                backgroundColor: "rgba(255, 255, 255, 0.08)",
+                color: "#FFFFFF",
                 "& .MuiListItemIcon-root": {
-                  color: "#38BDF8",
+                  color: "#74B9FF",
                 },
               },
               "&.active": {
-                backgroundColor: "#2563EB",
+                background: "linear-gradient(90deg, #1769E0, #237FEF)",
                 color: "#FFFFFF",
                 fontWeight: 600,
-                boxShadow: "0 4px 12px rgba(37, 99, 235, 0.3)",
+                boxShadow: "0 6px 16px rgba(0, 0, 0, 0.18)",
                 "& .MuiListItemIcon-root": {
                   color: "#FFFFFF",
                 },

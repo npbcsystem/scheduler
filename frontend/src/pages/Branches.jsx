@@ -138,7 +138,7 @@ export default function Branches() {
       >
         <Box>
           <Typography variant="h4" fontWeight="bold">
-            Branches
+            Centers
           </Typography>
 
           <Typography color="text.secondary">
@@ -170,7 +170,7 @@ export default function Branches() {
         >
           <TextField
             fullWidth
-            label="Search Branches"
+            label="Search a center"
             placeholder="Name or region..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -210,6 +210,7 @@ export default function Branches() {
 
               <MenuItem value={3}>Week 3</MenuItem>
 
+              <MenuItem value={4}>Week 4</MenuItem>
               <MenuItem value={4}>Week 4</MenuItem>
             </Select>
           </FormControl>
@@ -265,7 +266,7 @@ export default function Branches() {
               <TableHead>
                 <TableRow>
                   <TableCell>
-                    <b>Branch</b>
+                    <b>Center</b>
                   </TableCell>
 
                   <TableCell>

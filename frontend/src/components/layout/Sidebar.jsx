@@ -24,7 +24,7 @@ const menuItems = [
   { text: "Dashboard", path: "/dashboard", icon: <DashboardIcon /> },
   { text: "Generate Schedule", path: "/generate", icon: <AutoAwesomeIcon /> },
   { text: "Schedules", path: "/schedules", icon: <EventIcon /> },
-  { text: "Branches", path: "/branches", icon: <BusinessIcon /> },
+  { text: "Centers", path: "/branches", icon: <BusinessIcon /> },
   { text: "Lecturers", path: "/lecturers", icon: <SchoolIcon /> },
   { text: "Courses", path: "/courses", icon: <MenuBookIcon /> },
   { text: "Progress", path: "/progress", icon: <TimelineIcon /> },

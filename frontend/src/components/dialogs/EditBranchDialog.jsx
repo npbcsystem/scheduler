@@ -260,6 +260,21 @@ export default function EditBranchDialog({ open, onClose, branch, onUpdated }) {
               >
                 Week 4
               </MenuItem>
+              <MenuItem
+                value={5}
+                sx={{
+                  "&.Mui-selected": {
+                    backgroundColor: "primary.main",
+                    color: "primary.contrastText",
+                  },
+
+                  "&.Mui-selected:hover": {
+                    backgroundColor: "primary.dark",
+                  },
+                }}
+              >
+                Week 5
+              </MenuItem>
             </Select>
           </FormControl>
           <FormControl fullWidth>

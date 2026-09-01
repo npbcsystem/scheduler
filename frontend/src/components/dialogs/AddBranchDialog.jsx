@@ -181,6 +181,8 @@ export default function AddBranchDialog({ open, onClose, onCreated }) {
               <MenuItem value={3}>Week 3</MenuItem>
 
               <MenuItem value={4}>Week 4</MenuItem>
+
+              <MenuItem value={5}>Week 5</MenuItem>
             </Select>
           </FormControl>
 

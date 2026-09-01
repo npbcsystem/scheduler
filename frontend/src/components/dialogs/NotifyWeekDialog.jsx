@@ -3,11 +3,13 @@ import { useState } from "react";
 import {
   Alert,
   Button,
+  Checkbox,
   CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
   Stack,
   Typography,
 } from "@mui/material";
@@ -26,6 +28,10 @@ export default function NotifyWeekDialog({
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
 
+  const [sendLecturers, setSendLecturers] = useState(true);
+
+  const [sendCoordinators, setSendCoordinators] = useState(false);
+
   const monthName = new Date(year, month - 1, 1).toLocaleString("en-US", {
     month: "long",
   });
@@ -36,10 +42,20 @@ export default function NotifyWeekDialog({
         setError("Please select a specific week first.");
         return;
       }
+
+      if (!sendLecturers && !sendCoordinators) {
+        setError("Please select at least one recipient.");
+        return;
+      }
+
       setSending(true);
       setError("");
 
-      const result = await notifyWeek(week, month, year);
+      const result = await notifyWeek(week, month, year, {
+        lecturers: sendLecturers,
+
+        coordinators: sendCoordinators,
+      });
 
       onSuccess(result);
       onClose();
@@ -76,6 +92,41 @@ export default function NotifyWeekDialog({
           <Typography>
             Approved classes: <strong>{schedulesCount}</strong>
           </Typography>
+          <Typography fontWeight="bold" sx={{ mt: 2 }}>
+            Send notification to:
+          </Typography>
+
+          <Stack>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={sendLecturers}
+                  onChange={(e) => setSendLecturers(e.target.checked)}
+                />
+              }
+              label="Lecturers"
+            />
+
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={sendCoordinators}
+                  onChange={(e) => setSendCoordinators(e.target.checked)}
+                />
+              }
+              label="Branch Coordinators"
+            />
+          </Stack>
+
+          <Alert severity="info">
+            {sendLecturers &&
+              "Lecturers will receive their individual class assignments."}
+
+            {sendLecturers && sendCoordinators && " "}
+
+            {sendCoordinators &&
+              "Coordinators will receive one consolidated message containing the final schedule for their branch."}
+          </Alert>
 
           <Alert severity="info">
             Notifications will be sent to the assigned lecturers and branch

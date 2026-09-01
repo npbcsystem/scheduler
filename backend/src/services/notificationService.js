@@ -8,9 +8,7 @@ import { sendSMS } from "./smsService.js";
 const formatPhone = (phone) => {
   if (!phone) return null;
 
-  let value = String(phone)
-    .trim()
-    .replace(/[\s-]/g, "");
+  let value = String(phone).trim().replace(/[\s-]/g, "");
 
   // 0714590488 -> 254714590488
   if (value.startsWith("0")) {
@@ -26,46 +24,43 @@ const formatPhone = (phone) => {
 };
 
 // --------------------------------------------------
+// Format phone number for display in SMS
+// --------------------------------------------------
+
+const displayPhone = (phone) => {
+  if (!phone) return null;
+
+  const value = formatPhone(phone);
+
+  if (!value) return null;
+
+  // 254712345678 -> +254712345678
+  if (value.startsWith("254")) {
+    return `+${value}`;
+  }
+
+  return value;
+};
+
+// --------------------------------------------------
 // Get actual Saturday for the selected week/month/year
 // --------------------------------------------------
 
-const getSaturdayForWeek = (
-  week,
-  month,
-  year
-) => {
-  const firstDay = new Date(
-    Number(year),
-    Number(month) - 1,
-    1
-  );
+const getSaturdayForWeek = (week, month, year) => {
+  const firstDay = new Date(Number(year), Number(month) - 1, 1);
 
   // Find first Saturday of the month
-  const firstSaturday =
-    1 +
-    ((6 - firstDay.getDay() + 7) % 7);
+  const firstSaturday = 1 + ((6 - firstDay.getDay() + 7) % 7);
 
-  const saturdayDate =
-    firstSaturday +
-    (Number(week) - 1) * 7;
+  const saturdayDate = firstSaturday + (Number(week) - 1) * 7;
 
-  const date = new Date(
-    Number(year),
-    Number(month) - 1,
-    saturdayDate
-  );
+  const date = new Date(Number(year), Number(month) - 1, saturdayDate);
 
-  const day =
-    String(date.getDate()).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
 
-  const monthNumber =
-    String(date.getMonth() + 1).padStart(
-      2,
-      "0"
-    );
+  const monthNumber = String(date.getMonth() + 1).padStart(2, "0");
 
-  const actualYear =
-    date.getFullYear();
+  const actualYear = date.getFullYear();
 
   return `${day}/${monthNumber}/${actualYear}`;
 };
@@ -98,62 +93,52 @@ export const notifyWeek = async ({
   week,
   month,
   year,
+  recipients = {
+    lecturers: true,
+    coordinators: true,
+  },
 }) => {
-  const schedules =
-    await Schedule.find({
-      week: Number(week),
-      month: Number(month),
-      year: Number(year),
+  const schedules = await Schedule.find({
+    week: Number(week),
+    month: Number(month),
+    year: Number(year),
 
-      status: {
-        $in: [
-          "APPROVED",
-          "COMPLETED",
-        ],
-      },
-    })
-      .populate("branch")
-      .populate("course")
-      .populate("lecturer");
+    status: {
+      $in: ["APPROVED", "COMPLETED"],
+    },
+  })
+    .populate("branch")
+    .populate("course")
+    .populate("lecturer");
 
   // --------------------------------------------------
   // Actual Saturday
   // --------------------------------------------------
 
-  const saturdayDate =
-    getSaturdayForWeek(
-      week,
-      month,
-      year
-    );
+  const saturdayDate = getSaturdayForWeek(week, month, year);
 
   // --------------------------------------------------
   // Group coordinator messages by branch
   // --------------------------------------------------
 
-  const coordinatorGroups =
-    new Map();
+  const coordinatorGroups = new Map();
 
   // --------------------------------------------------
   // Lecturer recipients
   // --------------------------------------------------
 
-  const lecturerRecipients =
-    new Map();
+  const lecturerRecipients = new Map();
 
   // --------------------------------------------------
   // Process schedules
   // --------------------------------------------------
 
   for (const schedule of schedules) {
-    const branch =
-      schedule.branch;
+    const branch = schedule.branch;
 
-    const course =
-      schedule.course;
+    const course = schedule.course;
 
-    const lecturer =
-      schedule.lecturer;
+    const lecturer = schedule.lecturer;
 
     if (!branch || !course) {
       continue;
@@ -163,54 +148,38 @@ export const notifyWeek = async ({
     // LECTURER MESSAGE
     // ==================================================
 
-    if (lecturer?.phone) {
-      const phone =
-        formatPhone(
-          lecturer.phone
-        );
+    if (recipients.lecturers && lecturer?.phone) {
+      const phone = formatPhone(lecturer.phone);
 
       if (phone) {
-        const coordinatorPhone =
-          formatPhone(
-            branch.coordinatorPhone
-          );
+        const coordinatorPhone = formatPhone(branch.coordinatorPhone);
+
+        const coordinatorDisplayPhone = displayPhone(branch.coordinatorPhone);
 
         const message =
           `Praise the Lord and hope you are well. ` +
-          `This Saturday  ${saturdayDate} plan for ` +
+          `This Saturday ${saturdayDate} plan for ` +
           `${course.name || "your class"} ` +
-          `at ${branch.name}. ` +
-          `Coordinator: +${coordinatorPhone || "N/A"}. ` +
+          `at ${branch.name} ` +
+          `(${getLevelLabel(schedule.level)}). ` +
+          `Coordinator: ${coordinatorDisplayPhone || "N/A"}. ` +
           `Kindly confirm on time and remember to submit ` +
           `the class reports on Monday before 4:00 PM. ` +
           `Blessings. ` +
           `For inquiries, call ODEL 0115008558`;
 
-        const key =
-          `LECTURER-${phone}`;
+        const key = `LECTURER-${phone}`;
 
-        if (
-          !lecturerRecipients.has(
-            key
-          )
-        ) {
-          lecturerRecipients.set(
-            key,
-            {
-              phone,
-              name:
-                lecturer.name,
-              type: "LECTURER",
-              messages: [],
-            }
-          );
+        if (!lecturerRecipients.has(key)) {
+          lecturerRecipients.set(key, {
+            phone,
+            name: lecturer.name,
+            type: "LECTURER",
+            messages: [],
+          });
         }
 
-        lecturerRecipients
-          .get(key)
-          .messages.push(
-            message
-          );
+        lecturerRecipients.get(key).messages.push(message);
       }
     }
 
@@ -218,60 +187,31 @@ export const notifyWeek = async ({
     // COORDINATOR MESSAGE
     // ==================================================
 
-    if (
-      branch.coordinatorPhone
-    ) {
-      const phone =
-        formatPhone(
-          branch.coordinatorPhone
-        );
+    if (recipients.coordinators && branch.coordinatorPhone) {
+      const phone = formatPhone(branch.coordinatorPhone);
 
       if (phone) {
-        const key =
-          `${branch._id}-${phone}`;
+        const key = `${branch._id}-${phone}`;
 
-        if (
-          !coordinatorGroups.has(
-            key
-          )
-        ) {
-          coordinatorGroups.set(
-            key,
-            {
-              phone,
-              name:
-                branch.coordinatorName ||
-                "Coordinator",
-              type:
-                "COORDINATOR",
-              branch:
-                branch.name,
-              classes: [],
-            }
-          );
+        if (!coordinatorGroups.has(key)) {
+          coordinatorGroups.set(key, {
+            phone,
+            name: branch.coordinatorName || "Coordinator",
+            type: "COORDINATOR",
+            branch: branch.name,
+            classes: [],
+          });
         }
 
-        coordinatorGroups
-          .get(key)
-          .classes.push({
-            level:
-              schedule.level,
+        coordinatorGroups.get(key).classes.push({
+          level: schedule.level,
 
-            course:
-              course.name ||
-              "Unknown Course",
+          course: course.name || "Unknown Course",
 
-            lecturer:
-              lecturer?.name ||
-              "Not assigned",
+          lecturer: lecturer?.name || "Not assigned",
 
-            lecturerPhone:
-              lecturer?.phone
-                ? formatPhone(
-                    lecturer.phone
-                  )
-                : null,
-          });
+          lecturerPhone: lecturer?.phone ? displayPhone(lecturer.phone) : null,
+        });
       }
     }
   }
@@ -280,8 +220,7 @@ export const notifyWeek = async ({
   // Build coordinator SMS
   // --------------------------------------------------
 
-  const coordinatorRecipients =
-    [];
+  const coordinatorRecipients = [];
 
   for (const coordinator of coordinatorGroups.values()) {
     // Sort:
@@ -294,37 +233,25 @@ export const notifyWeek = async ({
     };
 
     coordinator.classes.sort(
-      (a, b) =>
-        (levelOrder[a.level] ||
-          99) -
-        (levelOrder[b.level] ||
-          99)
+      (a, b) => (levelOrder[a.level] || 99) - (levelOrder[b.level] || 99),
     );
 
-    let message =
-      `Shalom, Week ${week} Saturday Class ${saturdayDate}\n`;
+    let message = `Shalom, Week ${week} Saturday Class ${saturdayDate}\n`;
 
     for (const classItem of coordinator.classes) {
       message +=
-        `${getLevelLabel(
-          classItem.level
-        )} ` +
+        `${getLevelLabel(classItem.level)} ` +
         `${classItem.course} - ` +
         `${classItem.lecturer}`;
 
-      if (
-        classItem.lecturerPhone
-      ) {
-        message +=
-          ` +${classItem.lecturerPhone}`;
+      if (classItem.lecturerPhone) {
+        message += ` +${classItem.lecturerPhone}`;
       }
 
       message += "\n";
     }
 
-    message +=
-      `Blessings.\n` +
-      `For inquiries, call ODEL 0115008558`;
+    message += `Blessings.\n` + `For inquiries, call ODEL 0115008558`;
 
     coordinatorRecipients.push({
       ...coordinator,
@@ -342,28 +269,17 @@ export const notifyWeek = async ({
   // Send lecturer messages
   // --------------------------------------------------
 
-  for (
-    const recipient of lecturerRecipients.values()
-  ) {
-    for (
-      const message of recipient.messages
-    ) {
+  for (const recipient of lecturerRecipients.values()) {
+    for (const message of recipient.messages) {
       try {
-        const result =
-          await sendSMS(
-            recipient.phone,
-            message
-          );
+        const result = await sendSMS(recipient.phone, message);
 
         results.push({
-          phone:
-            recipient.phone,
+          phone: recipient.phone,
 
-          name:
-            recipient.name,
+          name: recipient.name,
 
-          type:
-            recipient.type,
+          type: recipient.type,
 
           message,
 
@@ -373,21 +289,17 @@ export const notifyWeek = async ({
         });
       } catch (error) {
         results.push({
-          phone:
-            recipient.phone,
+          phone: recipient.phone,
 
-          name:
-            recipient.name,
+          name: recipient.name,
 
-          type:
-            recipient.type,
+          type: recipient.type,
 
           message,
 
           status: "FAILED",
 
-          error:
-            error.message,
+          error: error.message,
         });
       }
     }
@@ -397,31 +309,20 @@ export const notifyWeek = async ({
   // Send coordinator messages
   // --------------------------------------------------
 
-  for (
-    const recipient of coordinatorRecipients
-  ) {
+  for (const recipient of coordinatorRecipients) {
     try {
-      const result =
-        await sendSMS(
-          recipient.phone,
-          recipient.message
-        );
+      const result = await sendSMS(recipient.phone, recipient.message);
 
       results.push({
-        phone:
-          recipient.phone,
+        phone: recipient.phone,
 
-        name:
-          recipient.name,
+        name: recipient.name,
 
-        type:
-          recipient.type,
+        type: recipient.type,
 
-        branch:
-          recipient.branch,
+        branch: recipient.branch,
 
-        message:
-          recipient.message,
+        message: recipient.message,
 
         status: "SENT",
 
@@ -429,25 +330,19 @@ export const notifyWeek = async ({
       });
     } catch (error) {
       results.push({
-        phone:
-          recipient.phone,
+        phone: recipient.phone,
 
-        name:
-          recipient.name,
+        name: recipient.name,
 
-        type:
-          recipient.type,
+        type: recipient.type,
 
-        branch:
-          recipient.branch,
+        branch: recipient.branch,
 
-        message:
-          recipient.message,
+        message: recipient.message,
 
         status: "FAILED",
 
-        error:
-          error.message,
+        error: error.message,
       });
     }
   }
@@ -459,35 +354,21 @@ export const notifyWeek = async ({
   return {
     success: true,
 
-    week:
-      Number(week),
+    week: Number(week),
 
-    month:
-      Number(month),
+    month: Number(month),
 
-    year:
-      Number(year),
+    year: Number(year),
 
     saturdayDate,
 
-    schedules:
-      schedules.length,
+    schedules: schedules.length,
 
-    recipients:
-      lecturerRecipients.size +
-      coordinatorRecipients.length,
+    recipients: lecturerRecipients.size + coordinatorRecipients.length,
 
-    sent:
-      results.filter(
-        (item) =>
-          item.status === "SENT"
-      ).length,
+    sent: results.filter((item) => item.status === "SENT").length,
 
-    failed:
-      results.filter(
-        (item) =>
-          item.status === "FAILED"
-      ).length,
+    failed: results.filter((item) => item.status === "FAILED").length,
 
     results,
   };

@@ -92,9 +92,9 @@ export const updateBranch = async (req, res) => {
     // Validate week
     // ---------------------------------------------
 
-    if (week !== undefined && ![1, 2, 3, 4].includes(Number(week))) {
+    if (week !== undefined && ![1, 2, 3, 4, 5 ].includes(Number(week))) {
       return res.status(400).json({
-        message: "Week must be between 1 and 4.",
+        message: "Week must be between 1 and 5.",
       });
     }
 

@@ -1,6 +1,19 @@
 import Schedule from "../models/Schedule.js";
 import ExcelJS from "exceljs";
 import PDFDocument from "pdfkit";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
+
+// --------------------------------------------------
+// File Path Setup
+// --------------------------------------------------
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Update this path to where your logo image is stored in your project
+const LOGO_PATH = path.join(__dirname, "../assets/npbc-logo-2.png");
 
 // --------------------------------------------------
 // Level labels
@@ -90,78 +103,76 @@ export const generateExcel = async ({
   year,
   week,
 }) => {
-  const workbook =
-    new ExcelJS.Workbook();
+  const workbook = new ExcelJS.Workbook();
 
-  workbook.creator =
-    "Nairobi Pentecostal Bible College";
+  workbook.creator = "Nairobi Pentecostal Bible College";
+  workbook.created = new Date();
 
-  workbook.created =
-    new Date();
+  // Load logo buffer if file exists
+  const hasLogo = fs.existsSync(LOGO_PATH);
+  const logoBuffer = hasLogo ? fs.readFileSync(LOGO_PATH) : null;
 
   // ==================================================
   // Schedule sheet
   // ==================================================
 
-  const worksheet =
-    workbook.addWorksheet(
-      "Schedule"
-    );
+  const worksheet = workbook.addWorksheet("Schedule");
 
-  worksheet.mergeCells(
-    "A1:L1"
-  );
+  // Adjust header row heights to accommodate logo
+  worksheet.getRow(1).height = 32;
+  worksheet.getRow(2).height = 24;
+
+  if (hasLogo) {
+    const logoImage = workbook.addImage({
+      buffer: logoBuffer,
+      extension: "png",
+    });
+
+    // Embed logo at cell A1 (Top-Left)
+    worksheet.addImage(logoImage, {
+      tl: { col: 0.1, row: 0.1 },
+      ext: { width: 45, height: 38 },
+    });
+  }
+
+  worksheet.mergeCells("A1:L1");
 
   worksheet.getCell("A1").value =
     "NAIROBI PENTECOSTAL BIBLE COLLEGE";
 
-  worksheet.getCell(
-    "A1"
-  ).font = {
+  worksheet.getCell("A1").font = {
     bold: true,
     size: 16,
   };
 
-  worksheet.getCell(
-    "A1"
-  ).alignment = {
+  worksheet.getCell("A1").alignment = {
     horizontal: "center",
+    vertical: "middle",
   };
 
-  worksheet.mergeCells(
-    "A2:L2"
-  );
+  worksheet.mergeCells("A2:L2");
 
-  const monthName =
-    new Date(
-      Number(year),
-      Number(month) - 1,
-      1
-    ).toLocaleString(
-      "en-US",
-      {
-        month: "long",
-      }
-    );
+  const monthName = new Date(
+    Number(year),
+    Number(month) - 1,
+    1
+  ).toLocaleString("en-US", {
+    month: "long",
+  });
 
-  worksheet.getCell(
-    "A2"
-  ).value =
+  worksheet.getCell("A2").value =
     week === "ALL"
       ? `CLASS SCHEDULE — ${monthName} ${year}`
       : `CLASS SCHEDULE — ${monthName} ${year} — WEEK ${week}`;
 
-  worksheet.getCell(
-    "A2"
-  ).font = {
+  worksheet.getCell("A2").font = {
     bold: true,
     size: 13,
   };
 
-  worksheet.getCell(
-    "A2"
-  ).alignment = {
+  worksheet.getCell("A2").alignment = {
     horizontal: "center",
+    vertical: "middle",
   };
 
   const headers = [
@@ -179,10 +190,7 @@ export const generateExcel = async ({
     "Source",
   ];
 
-  const headerRow =
-    worksheet.addRow(
-      headers
-    );
+  const headerRow = worksheet.addRow(headers);
 
   headerRow.font = {
     bold: true,
@@ -196,41 +204,16 @@ export const generateExcel = async ({
   for (const schedule of schedules) {
     worksheet.addRow([
       schedule.week,
-
-      schedule.branch?.name ||
-        "",
-
-      schedule.branch?.region ||
-        "",
-
-      getLevelLabel(
-        schedule.level
-      ),
-
-      schedule.course?.code ||
-        "",
-
-      schedule.course?.name ||
-        "",
-
-      schedule.lecturer?.name ||
-        "Not Assigned",
-
-      displayPhone(
-        schedule.lecturer?.phone
-      ),
-
-      schedule.branch
-        ?.coordinatorName ||
-        "",
-
-      displayPhone(
-        schedule.branch
-          ?.coordinatorPhone
-      ),
-
+      schedule.branch?.name || "",
+      schedule.branch?.region || "",
+      getLevelLabel(schedule.level),
+      schedule.course?.code || "",
+      schedule.course?.name || "",
+      schedule.lecturer?.name || "Not Assigned",
+      displayPhone(schedule.lecturer?.phone),
+      schedule.branch?.coordinatorName || "",
+      displayPhone(schedule.branch?.coordinatorPhone),
       schedule.status,
-
       schedule.source,
     ]);
   }
@@ -266,29 +249,35 @@ export const generateExcel = async ({
   // Summary sheet
   // ==================================================
 
-  const summary =
-    workbook.addWorksheet(
-      "Summary"
-    );
+  const summary = workbook.addWorksheet("Summary");
 
-  summary.mergeCells(
-    "A1:D1"
-  );
+  summary.getRow(1).height = 30;
+
+  if (hasLogo) {
+    const summaryLogo = workbook.addImage({
+      buffer: logoBuffer,
+      extension: "png",
+    });
+
+    summary.addImage(summaryLogo, {
+      tl: { col: 0.1, row: 0.1 },
+      ext: { width: 40, height: 34 },
+    });
+  }
+
+  summary.mergeCells("A1:D1");
 
   summary.getCell("A1").value =
     "NPBC SCHEDULE SUMMARY";
 
-  summary.getCell(
-    "A1"
-  ).font = {
+  summary.getCell("A1").font = {
     bold: true,
     size: 16,
   };
 
-  summary.getCell(
-    "A1"
-  ).alignment = {
+  summary.getCell("A1").alignment = {
     horizontal: "center",
+    vertical: "middle",
   };
 
   summary.addRow([]);
@@ -305,74 +294,40 @@ export const generateExcel = async ({
     schedules.length,
   ]);
 
-  const branches =
-    new Set(
-      schedules
-        .map(
-          (item) =>
-            item.branch?._id?.toString()
-        )
-        .filter(Boolean)
-    );
+  const branches = new Set(
+    schedules
+      .map((item) => item.branch?._id?.toString())
+      .filter(Boolean)
+  );
 
-  const lecturers =
-    new Set(
-      schedules
-        .map(
-          (item) =>
-            item.lecturer?._id?.toString()
-        )
-        .filter(Boolean)
-    );
+  const lecturers = new Set(
+    schedules
+      .map((item) => item.lecturer?._id?.toString())
+      .filter(Boolean)
+  );
 
-  summary.addRow([
-    "Branches",
-    branches.size,
-  ]);
-
-  summary.addRow([
-    "Lecturers",
-    lecturers.size,
-  ]);
+  summary.addRow(["Branches", branches.size]);
+  summary.addRow(["Lecturers", lecturers.size]);
 
   summary.addRow([]);
 
-  summary.addRow([
-    "Week",
-    "Classes",
-  ]);
+  summary.addRow(["Week", "Classes"]);
 
   const weekCounts = {};
 
-  schedules.forEach(
-    (schedule) => {
-      weekCounts[
-        schedule.week
-      ] =
-        (weekCounts[
-          schedule.week
-        ] || 0) + 1;
-    }
-  );
+  schedules.forEach((schedule) => {
+    weekCounts[schedule.week] =
+      (weekCounts[schedule.week] || 0) + 1;
+  });
 
-  Object.keys(
-    weekCounts
-  )
-    .sort(
-      (a, b) =>
-        Number(a) -
-        Number(b)
-    )
-    .forEach(
-      (weekNumber) => {
-        summary.addRow([
-          `Week ${weekNumber}`,
-          weekCounts[
-            weekNumber
-          ],
-        ]);
-      }
-    );
+  Object.keys(weekCounts)
+    .sort((a, b) => Number(a) - Number(b))
+    .forEach((weekNumber) => {
+      summary.addRow([
+        `Week ${weekNumber}`,
+        weekCounts[weekNumber],
+      ]);
+    });
 
   summary.columns = [
     { width: 25 },
@@ -394,329 +349,193 @@ export const generatePDF = ({
   year,
   week,
 }) => {
-  return new Promise(
-    (resolve, reject) => {
-      const doc =
-        new PDFDocument({
-          size: "A4",
-          layout: "landscape",
-          margins: {
-            top: 40,
-            bottom: 40,
-            left: 30,
-            right: 30,
-          },
-        });
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({
+      size: "A4",
+      layout: "landscape",
+      margins: {
+        top: 30,
+        bottom: 40,
+        left: 30,
+        right: 30,
+      },
+    });
 
-      const chunks = [];
+    const chunks = [];
 
-      doc.on(
-        "data",
-        (chunk) =>
-          chunks.push(chunk)
+    doc.on("data", (chunk) => chunks.push(chunk));
+    doc.on("end", () => resolve(Buffer.concat(chunks)));
+    doc.on("error", reject);
+
+    const monthName = new Date(
+      Number(year),
+      Number(month) - 1,
+      1
+    ).toLocaleString("en-US", {
+      month: "long",
+    });
+
+    // ----------------------------------------------
+    // Header & Logo
+    // ----------------------------------------------
+
+    if (fs.existsSync(LOGO_PATH)) {
+      const logoWidth = 50;
+      const logoX = (doc.page.width - logoWidth) / 2;
+      
+      // Draw centered logo at the top
+      doc.image(LOGO_PATH, logoX, 20, { width: logoWidth });
+      doc.y = 65;
+    } else {
+      doc.y = 30;
+    }
+
+    doc
+      .fontSize(16)
+      .font("Helvetica-Bold")
+      .text("NAIROBI PENTECOSTAL BIBLE COLLEGE", {
+        align: "center",
+      });
+
+    doc
+      .moveDown(0.3)
+      .fontSize(11)
+      .text(
+        week === "ALL"
+          ? `CLASS SCHEDULE — ${monthName} ${year}`
+          : `CLASS SCHEDULE — ${monthName} ${year} — WEEK ${week}`,
+        {
+          align: "center",
+        }
       );
 
-      doc.on(
-        "end",
-        () =>
-          resolve(
-            Buffer.concat(chunks)
-          )
-      );
+    doc.moveDown(0.8);
 
-      doc.on(
-        "error",
-        reject
-      );
+    // ----------------------------------------------
+    // Table Config
+    // ----------------------------------------------
 
-      const monthName =
-        new Date(
-          Number(year),
-          Number(month) - 1,
-          1
-        ).toLocaleString(
-          "en-US",
-          {
-            month: "long",
-          }
-        );
+    const columns = [
+      { title: "Week", width: 35 },
+      { title: "Branch", width: 105 },
+      { title: "Level", width: 45 },
+      { title: "Course", width: 125 },
+      { title: "Lecturer", width: 105 },
+      { title: "Lecturer Phone", width: 85 },
+      { title: "Coordinator", width: 90 },
+      { title: "Status", width: 65 },
+    ];
 
-      // ----------------------------------------------
-      // Header
-      // ----------------------------------------------
+    const startX = 30;
+    let y = doc.y;
+    const rowHeight = 25;
 
+    // ----------------------------------------------
+    // Header row
+    // ----------------------------------------------
+
+    let x = startX;
+
+    doc.font("Helvetica-Bold").fontSize(8);
+
+    columns.forEach((column) => {
       doc
-        .fontSize(18)
-        .font("Helvetica-Bold")
-        .text(
-          "NAIROBI PENTECOSTAL BIBLE COLLEGE",
-          {
-            align: "center",
-          }
-        );
+        .rect(x, y, column.width, rowHeight)
+        .stroke();
 
-      doc
-        .moveDown(0.4)
-        .fontSize(13)
-        .text(
-          week === "ALL"
-            ? `CLASS SCHEDULE — ${monthName} ${year}`
-            : `CLASS SCHEDULE — ${monthName} ${year} — WEEK ${week}`,
-          {
-            align: "center",
-          }
-        );
+      doc.text(column.title, x + 3, y + 8, {
+        width: column.width - 6,
+        align: "center",
+      });
 
-      doc.moveDown(1);
+      x += column.width;
+    });
 
-      // ----------------------------------------------
-      // Table
-      // ----------------------------------------------
+    y += rowHeight;
 
-      const columns = [
-        {
-          title: "Week",
-          width: 35,
-        },
-        {
-          title: "Branch",
-          width: 105,
-        },
-        {
-          title: "Level",
-          width: 45,
-        },
-        {
-          title: "Course",
-          width: 125,
-        },
-        {
-          title: "Lecturer",
-          width: 105,
-        },
-        {
-          title: "Lecturer Phone",
-          width: 85,
-        },
-        {
-          title: "Coordinator",
-          width: 90,
-        },
-        {
-          title: "Status",
-          width: 65,
-        },
-      ];
+    // ----------------------------------------------
+    // Data rows
+    // ----------------------------------------------
 
-      const startX = 30;
+    doc.font("Helvetica");
 
-      let y =
-        doc.y;
+    schedules.forEach((schedule) => {
+      if (y > doc.page.height - 70) {
+        doc.addPage();
 
-      const rowHeight =
-        25;
+        y = 30;
 
-      // ----------------------------------------------
-      // Header row
-      // ----------------------------------------------
+        let headerX = startX;
 
-      let x = startX;
+        doc.font("Helvetica-Bold").fontSize(8);
 
-      doc
-        .font("Helvetica-Bold")
-        .fontSize(8);
-
-      columns.forEach(
-        (column) => {
+        columns.forEach((column) => {
           doc
-            .rect(
-              x,
-              y,
-              column.width,
-              rowHeight
-            )
+            .rect(headerX, y, column.width, rowHeight)
             .stroke();
 
-          doc.text(
-            column.title,
-            x + 3,
-            y + 8,
-            {
-              width:
-                column.width - 6,
-              align: "center",
-            }
-          );
+          doc.text(column.title, headerX + 3, y + 8, {
+            width: column.width - 6,
+            align: "center",
+          });
 
-          x += column.width;
-        }
-      );
+          headerX += column.width;
+        });
+
+        y += rowHeight;
+
+        doc.font("Helvetica");
+      }
+
+      const values = [
+        schedule.week,
+        schedule.branch?.name || "",
+        getLevelLabel(schedule.level),
+        schedule.course?.name || "",
+        schedule.lecturer?.name || "Not Assigned",
+        displayPhone(schedule.lecturer?.phone),
+        schedule.branch?.coordinatorName || "",
+        schedule.status,
+      ];
+
+      let rowX = startX;
+
+      values.forEach((value, index) => {
+        const column = columns[index];
+
+        doc
+          .rect(rowX, y, column.width, rowHeight)
+          .stroke();
+
+        doc.text(String(value || ""), rowX + 3, y + 7, {
+          width: column.width - 6,
+          height: rowHeight - 4,
+          ellipsis: true,
+          align:
+            index === 0 || index === 2 || index === 7
+              ? "center"
+              : "left",
+        });
+
+        rowX += column.width;
+      });
 
       y += rowHeight;
+    });
 
-      // ----------------------------------------------
-      // Data rows
-      // ----------------------------------------------
+    // ----------------------------------------------
+    // Footer
+    // ----------------------------------------------
 
-      doc.font(
-        "Helvetica"
+    doc
+      .fontSize(8)
+      .font("Helvetica")
+      .text(
+        `Generated ${new Date().toLocaleString()}`,
+        30,
+        doc.page.height - 35
       );
 
-      schedules.forEach(
-        (schedule) => {
-          if (
-            y >
-            doc.page.height -
-              70
-          ) {
-            doc.addPage();
-
-            y = 40;
-
-            let headerX =
-              startX;
-
-            doc
-              .font(
-                "Helvetica-Bold"
-              )
-              .fontSize(8);
-
-            columns.forEach(
-              (column) => {
-                doc
-                  .rect(
-                    headerX,
-                    y,
-                    column.width,
-                    rowHeight
-                  )
-                  .stroke();
-
-                doc.text(
-                  column.title,
-                  headerX + 3,
-                  y + 8,
-                  {
-                    width:
-                      column.width -
-                      6,
-                    align:
-                      "center",
-                  }
-                );
-
-                headerX +=
-                  column.width;
-              }
-            );
-
-            y +=
-              rowHeight;
-
-            doc.font(
-              "Helvetica"
-            );
-          }
-
-          const values = [
-            schedule.week,
-
-            schedule.branch
-              ?.name || "",
-
-            getLevelLabel(
-              schedule.level
-            ),
-
-            schedule.course
-              ?.name || "",
-
-            schedule.lecturer
-              ?.name ||
-              "Not Assigned",
-
-            displayPhone(
-              schedule.lecturer
-                ?.phone
-            ),
-
-            schedule.branch
-              ?.coordinatorName ||
-              "",
-
-            schedule.status,
-          ];
-
-          let rowX =
-            startX;
-
-          values.forEach(
-            (
-              value,
-              index
-            ) => {
-              const column =
-                columns[index];
-
-              doc
-                .rect(
-                  rowX,
-                  y,
-                  column.width,
-                  rowHeight
-                )
-                .stroke();
-
-              doc.text(
-                String(
-                  value || ""
-                ),
-                rowX + 3,
-                y + 7,
-                {
-                  width:
-                    column.width -
-                    6,
-                  height:
-                    rowHeight -
-                    4,
-                  ellipsis:
-                    true,
-                  align:
-                    index === 0 ||
-                    index === 2 ||
-                    index === 7
-                      ? "center"
-                      : "left",
-                }
-              );
-
-              rowX +=
-                column.width;
-            }
-          );
-
-          y +=
-            rowHeight;
-        }
-      );
-
-      // ----------------------------------------------
-      // Footer
-      // ----------------------------------------------
-
-      doc
-        .fontSize(8)
-        .font("Helvetica")
-        .text(
-          `Generated ${new Date().toLocaleString()}`,
-          30,
-          doc.page.height -
-            35
-        );
-
-      doc.end();
-    }
-  );
+    doc.end();
+  });
 };

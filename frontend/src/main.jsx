@@ -5,12 +5,15 @@ import CssBaseline from '@mui/material/CssBaseline'
 import './index.css'
 import App from './App.jsx'
 import { theme } from './theme.js'
+import { AuthProvider } from "./context/AuthContext";
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <App />
-    </ThemeProvider>
+    <AuthProvider>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <App />
+      </ThemeProvider>
+    </AuthProvider>
   </StrictMode>,
 )

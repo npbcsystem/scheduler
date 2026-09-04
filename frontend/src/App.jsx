@@ -9,12 +9,26 @@ import Lecturers from "./pages/Lecturers";
 import Courses from "./pages/Courses";
 import Progress from "./pages/Progress";
 import Reports from "./pages/Reports";
+import Login from "./pages/Login";
+
+import ProtectedRoute from "./components/ProtectedRoute";
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Layout />}>
+        {/* Public route */}
+        <Route path="/login" element={<Login />} />
+
+        {/* Protected application */}
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }
+        >
           <Route index element={<Schedules />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="generate" element={<Generate />} />

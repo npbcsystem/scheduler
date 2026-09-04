@@ -8,10 +8,10 @@ export default function Layout() {
     <Box
       sx={{
         display: "flex",
-        minHeight: "100vh",
-        backgroundColor: "#f4f6f8",
+        height: "100vh",
         width: "100vw",
-        overflowX: "hidden",
+        overflow: "hidden", // Prevents body-level scrolling
+        background: "linear-gradient(135deg, #F7F9FC 0%, #F1F5FA 100%)",
       }}
     >
       <Sidebar />
@@ -20,15 +20,23 @@ export default function Layout() {
         component="main"
         sx={{
           flexGrow: 1,
-          width: `calc(100% - 250px)`, // Occupies exact remaining screen width
-          minWidth: 0,                 // Prevents wide tables from stretching layout
+          height: "100vh",
           display: "flex",
           flexDirection: "column",
+          minWidth: 0,
+          overflow: "hidden",
         }}
       >
         <Header />
 
-        <Box sx={{ p: 3, flexGrow: 1, overflowX: "auto" }}>
+        {/* Dedicated scrollable region for content */}
+        <Box
+          sx={{
+            flexGrow: 1,
+            overflowY: "auto",
+            p: { xs: 2, md: 4 },
+          }}
+        >
           <Outlet />
         </Box>
       </Box>

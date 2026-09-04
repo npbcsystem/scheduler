@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import {
@@ -25,35 +25,46 @@ export default function Generate() {
   const navigate = useNavigate();
 
   const [week, setWeek] = useState(1);
-
   const [loading, setLoading] = useState(false);
-
   const [success, setSuccess] = useState("");
-
   const [error, setError] = useState("");
-
   const [summary, setSummary] = useState(null);
 
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
-
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+
+  // Countdown timer state
+  const [countdown, setCountdown] = useState(null);
+
+  useEffect(() => {
+    if (countdown === null) return;
+
+    if (countdown === 0) {
+      navigate("/schedules"); // Change path if your schedule page route is different
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setCountdown((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [countdown, navigate]);
 
   const handleGenerate = async () => {
     try {
       setLoading(true);
-
       setError("");
-
       setSuccess("");
+      setCountdown(null);
 
       const result = await generateSchedule(week, selectedMonth, selectedYear);
 
       setSummary(result);
-
       setSuccess(result.message);
+      setCountdown(5); // Start the 5-second timer
     } catch (err) {
       console.log(err);
-
       setError("Unable to generate schedule.");
     } finally {
       setLoading(false);
@@ -61,10 +72,19 @@ export default function Generate() {
   };
 
   return (
-    <Container maxWidth="md">
-      <Card>
-        <CardContent>
-          <Typography variant="h4" gutterBottom fontWeight="bold">
+    <Container maxWidth="md" sx={{ py: { xs: 1, md: 2 } }}>
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h4" gutterBottom>
+          Build your weekly schedule
+        </Typography>
+        <Typography color="text.secondary">
+          Select a teaching period and intelligently assign the available lecturers.
+        </Typography>
+      </Box>
+      <Card sx={{ overflow: "hidden" }}>
+        <Box sx={{ height: 5, background: "linear-gradient(90deg, #1769E0, #00A78E)" }} />
+        <CardContent sx={{ p: { xs: 2.5, md: 4 } }}>
+          <Typography variant="h5" gutterBottom>
             Generate Schedule
           </Typography>
 
@@ -74,7 +94,10 @@ export default function Generate() {
 
           {success && (
             <Alert severity="success" sx={{ mb: 3 }}>
-              {success}
+              {success}{" "}
+              {countdown !== null && (
+                <strong>(Redirecting to schedules in {countdown}s...)</strong>
+              )}
             </Alert>
           )}
 
@@ -86,82 +109,61 @@ export default function Generate() {
 
           <Stack spacing={3}>
             <Box>
-              <Typography gutterBottom fontWeight="bold">
+              <Typography gutterBottom fontWeight="bold" sx={{ color: "text.primary" }}>
                 Schedule Period
               </Typography>
 
               <Stack spacing={2}>
                 {/* Year */}
-
                 <FormControl fullWidth>
                   <InputLabel>Year</InputLabel>
-
                   <Select
                     value={selectedYear}
                     label="Year"
                     onChange={(e) => setSelectedYear(Number(e.target.value))}
                   >
                     <MenuItem value={2026}>2026</MenuItem>
-
                     <MenuItem value={2027}>2027</MenuItem>
-
                     <MenuItem value={2028}>2028</MenuItem>
                   </Select>
                 </FormControl>
 
                 {/* Month */}
-
                 <FormControl fullWidth>
                   <InputLabel>Month</InputLabel>
-
                   <Select
                     value={selectedMonth}
                     label="Month"
                     onChange={(e) => setSelectedMonth(Number(e.target.value))}
                   >
                     <MenuItem value={1}>January</MenuItem>
-
                     <MenuItem value={2}>February</MenuItem>
-
                     <MenuItem value={3}>March</MenuItem>
-
                     <MenuItem value={4}>April</MenuItem>
-
                     <MenuItem value={5}>May</MenuItem>
-
                     <MenuItem value={6}>June</MenuItem>
-
                     <MenuItem value={7}>July</MenuItem>
-
                     <MenuItem value={8}>August</MenuItem>
-
                     <MenuItem value={9}>September</MenuItem>
-
                     <MenuItem value={10}>October</MenuItem>
-
                     <MenuItem value={11}>November</MenuItem>
-
                     <MenuItem value={12}>December</MenuItem>
                   </Select>
                 </FormControl>
 
                 {/* Week */}
-
                 <FormControl fullWidth>
                   <InputLabel>Week</InputLabel>
-
                   <Select
                     value={week}
                     label="Week"
                     onChange={(e) => setWeek(Number(e.target.value))}
                   >
                     <MenuItem value={1}>Week 1</MenuItem>
-
                     <MenuItem value={2}>Week 2</MenuItem>
-
                     <MenuItem value={3}>Week 3</MenuItem>
-
                     <MenuItem value={4}>Week 4</MenuItem>
+                    <MenuItem value={5}>Week 5</MenuItem>
                   </Select>
                 </FormControl>
               </Stack>
@@ -182,6 +184,7 @@ export default function Generate() {
             >
               {loading ? "Generating..." : "Generate Schedule"}
             </Button>
+
             {summary && (
               <Card sx={{ mt: 4 }}>
                 <CardContent>
@@ -214,11 +217,8 @@ export default function Generate() {
                       <Typography fontWeight="bold">
                         {item.branchName}
                       </Typography>
-
                       <Typography>{item.level}</Typography>
-
                       <Typography>{item.courseCode}</Typography>
-
                       <Typography>{item.courseName}</Typography>
                     </Box>
                   ))}

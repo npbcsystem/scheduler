@@ -37,11 +37,17 @@ const findAvailableLecturers = async (courseId, region, usedLecturers) => {
 
     {
       title: "Secondary Region",
-
       filter: {
         active: true,
         courses: courseId,
-        secondaryRegions: region,
+        $or: [
+          {
+            secondaryRegions: region,
+          },
+          {
+            secondaryRegions: "ALL",
+          },
+        ],
       },
     },
 
@@ -154,21 +160,21 @@ export const generateSchedule = async (week, month, year) => {
     week,
   });
 
-  console.log(`Found ${branches.length} branches for Week ${week}`);
+  // console.log(`Found ${branches.length} branches for Week ${week}`);
 
   // =======================================================
   // PROCESS BRANCHES
   // =======================================================
 
   for (const branch of branches) {
-    console.log(`\n========== ${branch.name} ==========`);
+    // console.log(`\n========== ${branch.name} ==========`);
 
     // =====================================================
     // PROCESS LEVELS
     // =====================================================
 
     for (const level of branch.levels) {
-      console.log(`Processing ${level}`);
+      // console.log(`Processing ${level}`);
 
       // ---------------------------------------------------
       // Check whether schedule already exists
@@ -238,14 +244,13 @@ export const generateSchedule = async (week, month, year) => {
       // ---------------------------------------------------
 
       if (!remainingCourses.length) {
-        console.log(`All ${level} courses completed.`);
+        // console.log(`All ${level} courses completed.`);
 
         continue;
       }
 
       expectedClasses++;
 
-      console.log(`Remaining courses: ${remainingCourses.length}`);
 
       // ===================================================
       // SMART COURSE SELECTION
@@ -255,15 +260,6 @@ export const generateSchedule = async (week, month, year) => {
 
       let selectedLecturer = null;
 
-      console.log("\n==============================");
-
-      console.log("Branch:", branch.name);
-
-      console.log("Region:", branch.region);
-
-      console.log("Level:", level);
-
-      console.log("==============================");
 
       // ---------------------------------------------------
       // Try every remaining course
@@ -271,7 +267,7 @@ export const generateSchedule = async (week, month, year) => {
       // ---------------------------------------------------
 
       for (const course of remainingCourses) {
-        console.log(`\nTrying course: ${course.code} - ${course.name}`);
+        // console.log(`\nTrying course: ${course.code} - ${course.name}`);
 
         const lecturers = await findAvailableLecturers(
           course._id,
@@ -279,10 +275,7 @@ export const generateSchedule = async (week, month, year) => {
           usedLecturers,
         );
 
-        console.log(
-          `Lecturers available for ${course.code}:`,
-          lecturers.map((l) => l.name),
-        );
+       
 
         if (lecturers.length > 0) {
           selectedCourse = course;
@@ -294,7 +287,7 @@ export const generateSchedule = async (week, month, year) => {
           break;
         }
 
-        console.log(`No available lecturer for ${course.code}`);
+        // console.log(`No available lecturer for ${course.code}`);
       }
 
       // ===================================================
@@ -302,10 +295,7 @@ export const generateSchedule = async (week, month, year) => {
       // ===================================================
 
       if (!selectedCourse || !selectedLecturer) {
-        console.log(
-          `No lecturer available for ANY remaining course for ${branch.name} (${level})`,
-        );
-
+        
         const suggestedCourse = remainingCourses[0];
 
         // -------------------------------------------------
@@ -390,9 +380,6 @@ export const generateSchedule = async (week, month, year) => {
         status: "DRAFT",
       });
 
-      console.log(
-        `Assigned ${selectedLecturer.name} -> ${selectedCourse.code}`,
-      );
 
       schedulesCreated++;
     }
@@ -402,17 +389,6 @@ export const generateSchedule = async (week, month, year) => {
   // SUMMARY
   // =======================================================
 
-  console.log(`\n========================================`);
-
-  console.log(`Schedule generation complete.`);
-
-  console.log(`Expected Classes: ${branches.length}`);
-
-  console.log(`Schedules Created: ${schedulesCreated}`);
-
-  console.log(`Unassigned: ${unassigned.length}`);
-
-  console.log(`========================================`);
 
   // =======================================================
   // RETURN

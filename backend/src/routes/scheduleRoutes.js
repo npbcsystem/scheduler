@@ -9,6 +9,7 @@ import {
   completeWeek,
   completeMonth,
 } from "../controllers/scheduleController.js";
+import { exportSchedule } from "../controllers/scheduleExportController.js";
 
 const router = express.Router();
 
@@ -17,6 +18,8 @@ router.get("/", getSchedules);
 
 // Generate schedule
 router.get("/generate/:week", generate);
+
+router.get("/export", exportSchedule);
 
 // Update schedule
 router.put("/:id", updateSchedule);
@@ -31,5 +34,7 @@ router.put("/approve/all", approveAll);
 router.put("/complete/week/:week", completeWeek);
 
 router.put("/complete/month/:month", completeMonth);
+
+
 
 export default router;

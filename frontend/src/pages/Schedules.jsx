@@ -24,7 +24,10 @@ import {
   Snackbar,
 } from "@mui/material";
 
+import IconButton from "@mui/material/IconButton";
 import RefreshIcon from "@mui/icons-material/Refresh";
+import PrintIcon from "@mui/icons-material/Print";
+import PrintExportDialog from "../components/dialogs/PrintExportDialog";
 
 import {
   getSchedules,
@@ -35,6 +38,7 @@ import {
 } from "../services/scheduleService";
 import EditScheduleDialog from "../components/dialogs/EditScheduleDialog";
 import { getPendingAssignments } from "../services/pendingAssignmentService";
+import NotifyWeekDialog from "../components/dialogs/NotifyWeekDialog";
 
 export default function Schedules() {
   const [loading, setLoading] = useState(true);
@@ -56,11 +60,15 @@ export default function Schedules() {
   const [selectedPending, setSelectedPending] = useState(null);
 
   const [assignMode, setAssignMode] = useState(false);
+  const [notifyDialogOpen, setNotifyDialogOpen] = useState(false);
 
   // dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const [selectedSchedule, setSelectedSchedule] = useState(null);
+
+  // eport dilogue
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
   // state variables
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -264,53 +272,123 @@ export default function Schedules() {
 
   return (
     <Container maxWidth="xl">
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="center"
-        sx={{ mb: 3 }}
-      >
-        <Typography variant="h4" fontWeight="bold">
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" fontWeight="bold" textAlign="center">
           Schedule Management
         </Typography>
-        
 
-        <Button variant="contained" color="success" onClick={handleApproveWeek}>
-          Approve Week
-        </Button>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleCompleteWeek}
-          disabled={weekFilter === "ALL" || loading}
-        >
-          Complete Week
-        </Button>
+        <Typography color="text.secondary" textAlign="center" sx={{ mt: 1 }}>
+          Generate, review, approve and manage branch schedules.
+        </Typography>
+      </Box>
 
-        <Button
-          variant="contained"
-          color="secondary"
-          onClick={handleApproveAll}
-        >
-          Approve All
-        </Button>
-        <Button
-          variant="contained"
-          color="warning"
-          onClick={handleCompleteMonth}
-          disabled={loading}
-        >
-          Complete Month
-        </Button>
+      {/* --------------------------------------------------
+    Action Buttons
+-------------------------------------------------- */}
 
-        <Button
-          variant="contained"
-          startIcon={<RefreshIcon />}
-          onClick={loadSchedules}
+      <Paper
+        elevation={1}
+        sx={{
+          p: 2,
+          mb: 3,
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 1.5,
+          }}
         >
-          Refresh
-        </Button>
-      </Stack>
+          {/* Action Buttons Group (Left Side) */}
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={1.5}
+            flexWrap="wrap"
+            useFlexGap
+          >
+            <Button
+              variant="contained"
+              color="success"
+              onClick={handleApproveWeek}
+              disabled={weekFilter === "ALL" || loading}
+            >
+              Approve Week
+            </Button>
+
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={handleApproveAll}
+              disabled={loading}
+            >
+              Approve All
+            </Button>
+
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleCompleteWeek}
+              disabled={weekFilter === "ALL" || loading}
+            >
+              Complete Week
+            </Button>
+
+            <Button
+              variant="contained"
+              color="warning"
+              onClick={handleCompleteMonth}
+              disabled={loading}
+            >
+              Complete Month
+            </Button>
+
+            <Button
+              variant="contained"
+              color="info"
+              onClick={() => setNotifyDialogOpen(true)}
+              disabled={
+                weekFilter === "ALL" ||
+                filteredSchedules.filter(
+                  (schedule) => schedule.status === "APPROVED",
+                ).length === 0
+              }
+            >
+              Notify Week
+            </Button>
+
+            <IconButton
+              color="primary"
+              onClick={loadSchedules}
+              disabled={loading}
+              title="Refresh schedules"
+            >
+              <RefreshIcon />
+            </IconButton>
+          </Stack>
+
+          {/* Print Button (Far Right) */}
+          <Button
+            variant="outlined"
+            startIcon={<PrintIcon />}
+            onClick={() => setExportDialogOpen(true)}
+            sx={{
+              color: "common.black",
+              borderColor: "common.black",
+              ml: "auto", // Ensures it stays pushed right even if wrap occurs
+              "&:hover": {
+                borderColor: "common.black",
+                backgroundColor: "rgba(0, 0, 0, 0.04)",
+              },
+            }}
+          >
+            Print
+          </Button>
+        </Box>
+      </Paper>
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
@@ -383,6 +461,8 @@ export default function Schedules() {
               <MenuItem value={3}>Week 3</MenuItem>
 
               <MenuItem value={4}>Week 4</MenuItem>
+
+              <MenuItem value={5}>Week 5</MenuItem>
             </Select>
           </FormControl>
         </Stack>
@@ -577,6 +657,34 @@ export default function Schedules() {
 
           loadPendingAssignments();
         }}
+      />
+      <NotifyWeekDialog
+        open={notifyDialogOpen}
+        onClose={() => setNotifyDialogOpen(false)}
+        week={weekFilter}
+        month={monthFilter}
+        year={yearFilter}
+        schedulesCount={
+          filteredSchedules.filter((schedule) => schedule.status === "APPROVED")
+            .length
+        }
+        onSuccess={(result) => {
+          setSnackbarSeverity(result.failed > 0 ? "warning" : "success");
+
+          setSnackbarMessage(
+            `${result.sent} SMS notification${
+              result.sent === 1 ? "" : "s"
+            } sent successfully. ${result.failed} failed.`,
+          );
+
+          setSnackbarOpen(true);
+        }}
+      />
+      <PrintExportDialog
+        open={exportDialogOpen}
+        onClose={() => setExportDialogOpen(false)}
+        month={monthFilter}
+        year={yearFilter}
       />
     </Container>
   );

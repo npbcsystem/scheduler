@@ -32,3 +32,44 @@ export const addCompletedCourse = async (
 
   return response.data;
 };
+
+export const addCompletedCourses = async (
+  progressId,
+  data
+) => {
+  const response = await api.put(
+    `/progress/${progressId}/add-courses`,
+    data
+  );
+
+  return response.data;
+};
+
+
+export const removeCompletedCourse = async (
+  progressId,
+  courseId
+) => {
+  const response = await api.put(
+    `/progress/${progressId}/remove-course`,
+    {
+      courseId,
+    }
+  );
+
+  return response.data;
+};
+
+export const removeCompletedCourses = async (
+  progressId,
+  courseIds
+) => {
+  const response = await api.put(
+    `/progress/${progressId}/remove-courses`,
+    {
+      courseIds,
+    }
+  );
+
+  return response.data;
+};

@@ -10,6 +10,8 @@ import Courses from "./pages/Courses";
 import Progress from "./pages/Progress";
 import Reports from "./pages/Reports";
 import Login from "./pages/Login";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -19,6 +21,8 @@ export default function App() {
       <Routes>
         {/* Public route */}
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
 
         {/* Protected application */}
         <Route

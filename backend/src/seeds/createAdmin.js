@@ -22,7 +22,7 @@ const createAdmin = async () => {
     const hashedPassword = await bcrypt.hash(password, 12);
 
     const admin = await User.create({
-      name: "NPBC Administrator",
+      name: "George",
       email,
       password: hashedPassword,
       role: "ADMIN",

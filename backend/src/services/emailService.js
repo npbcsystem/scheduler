@@ -17,6 +17,12 @@ export const sendEmail = async ({
   html,
 }) => {
   try {
+    console.log("Testing SMTP connection...");
+
+    await transporter.verify();
+
+    console.log("SMTP connection verified.");
+
     const info = await transporter.sendMail({
       from: `"NPBC Scheduler" <${process.env.SMTP_FROM}>`,
       to,

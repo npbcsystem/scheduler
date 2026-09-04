@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import { useAuth } from "../context/AuthContext";
+import { Link } from "react-router-dom";
 
 const Login = () => {
   const { login } = useAuth();
@@ -32,7 +33,7 @@ const Login = () => {
     } catch (error) {
       setError(
         error.response?.data?.message ||
-          "Unable to login. Please check your credentials."
+          "Unable to login. Please check your credentials.",
       );
     } finally {
       setLoading(false);
@@ -68,30 +69,25 @@ const Login = () => {
           }}
         >
           <Box
+            component="img"
+            src="/npbc-logo-2.png"
+            alt="NPBC Logo"
             sx={{
-              width: 60,
-              height: 60,
-              borderRadius: "50%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              bgcolor: "primary.main",
-              color: "white",
-              mb: 2,
+              height: 86,
+              width: "auto",
+              objectFit: "contain",
+              p: 0.5,
+              borderRadius: 2,
+              bgcolor: "#FFF",
+              border: "1px solid #E6ECF4",
             }}
-          >
-            <LockOutlinedIcon />
-          </Box>
+          />
 
           <Typography variant="h5" fontWeight={700}>
-            NPBC 
+            NPBC
           </Typography>
 
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ mt: 0.5 }}
-          >
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
             Scheduler Management System
           </Typography>
         </Box>
@@ -124,6 +120,29 @@ const Login = () => {
             required
             autoComplete="current-password"
           />
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "flex-end",
+              mt: 1,
+            }}
+          >
+            <Typography
+              component={Link}
+              to="/forgot-password"
+              sx={{
+                fontSize: "0.85rem",
+                color: "primary.main",
+                textDecoration: "none",
+                fontWeight: 500,
+                "&:hover": {
+                  textDecoration: "underline",
+                },
+              }}
+            >
+              Forgot password?
+            </Typography>
+          </Box>
 
           <Button
             fullWidth

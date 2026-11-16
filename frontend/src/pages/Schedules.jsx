@@ -23,6 +23,7 @@ import {
   TextField,
   Typography,
   Snackbar,
+  useMediaQuery,
 } from "@mui/material";
 
 import IconButton from "@mui/material/IconButton";
@@ -41,7 +42,27 @@ import EditScheduleDialog from "../components/dialogs/EditScheduleDialog";
 import { getPendingAssignments } from "../services/pendingAssignmentService";
 import NotifyWeekDialog from "../components/dialogs/NotifyWeekDialog";
 
+function ScheduleCard({ center, detail, course, note, status, action, onAction }) {
+  return (
+    <Paper component="article" variant="outlined" sx={{ p: 2, overflowWrap: "anywhere" }}>
+      <Stack direction="row" spacing={1} sx={{ justifyContent: "space-between", alignItems: "flex-start" }}>
+        <Box>
+          <Typography component="h3" fontWeight={750}>{center || "Unknown center"}</Typography>
+          <Typography variant="caption" color="text.secondary">{detail}</Typography>
+        </Box>
+        {status}
+      </Stack>
+      <Typography variant="body2" fontWeight={700} sx={{ mt: 1.5 }}>{course}</Typography>
+      {note && <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{note}</Typography>}
+      <Button fullWidth variant="outlined" onClick={onAction} sx={{ mt: 1.5, minHeight: 44 }}>
+        {action}
+      </Button>
+    </Paper>
+  );
+}
+
 export default function Schedules() {
+  const compact = useMediaQuery((theme) => theme.breakpoints.down("md"));
   const [loading, setLoading] = useState(true);
 
   const [error, setError] = useState("");
@@ -75,6 +96,17 @@ export default function Schedules() {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState("success");
+
+  const editSchedule = (schedule) => {
+    setSelectedSchedule(schedule);
+    setDialogOpen(true);
+  };
+
+  const assignSchedule = (item) => {
+    setSelectedPending(item);
+    setAssignMode(true);
+    setDialogOpen(true);
+  };
 
   //--------------------------------------------------
   // Load schedules
@@ -455,15 +487,30 @@ export default function Schedules() {
         </Stack>
       </Paper>
 
-      <Paper>
         {loading ? (
-          <Box
+          <Paper
             sx={{ display: "grid", placeItems: "center", minHeight: 300 }}
           >
-            <CircularProgress />
-          </Box>
+            <CircularProgress aria-label="Loading schedules" />
+          </Paper>
+        ) : compact ? (
+          <Stack spacing={1.5} aria-label="Schedules">
+            {filteredSchedules.map((schedule) => (
+              <ScheduleCard
+                key={schedule._id}
+                center={schedule.branch?.name}
+                detail={[`Week ${schedule.week}`, schedule.branch?.region, schedule.level].filter(Boolean).join(" · ")}
+                course={[schedule.course?.code, schedule.course?.name].filter(Boolean).join(" · ")}
+                note={[schedule.lecturer?.name || "Unassigned lecturer", schedule.lecturer?.phone].filter(Boolean).join(" · ")}
+                status={<Chip label={schedule.status} color={statusColor(schedule.status)} size="small" />}
+                action="Edit schedule"
+                onAction={() => editSchedule(schedule)}
+              />
+            ))}
+            {filteredSchedules.length === 0 && <Alert severity="info">No schedules found.</Alert>}
+          </Stack>
         ) : (
-          <TableContainer sx={{ borderRadius: 'inherit' }}>
+          <TableContainer component={Paper}>
             <Table>
               <TableHead>
                 <TableRow>
@@ -503,7 +550,7 @@ export default function Schedules() {
               <TableBody>
                 {filteredSchedules.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} align="center">
+                    <TableCell colSpan={8} align="center">
                       No schedules found.
                     </TableCell>
                   </TableRow>
@@ -548,11 +595,7 @@ export default function Schedules() {
                         <Button
                           variant="outlined"
                           size="small"
-                          onClick={() => {
-                            setSelectedSchedule(schedule);
-
-                            setDialogOpen(true);
-                          }}
+                          onClick={() => editSchedule(schedule)}
                         >
                           Edit
                         </Button>
@@ -564,14 +607,29 @@ export default function Schedules() {
             </Table>
           </TableContainer>
         )}
-      </Paper>
       {/* Conditionally render Unassigned Classes section */}
       {pendingAssignments.length > 0 && (
         <Paper sx={{ p: 2, mt: 3 }}>
-          <Typography variant="h5" sx={{ mt: 5, mb: 2 }}>
+          <Typography variant="h5" component="h2" sx={{ mb: 2 }}>
             Unassigned Classes
           </Typography>
 
+          {compact ? (
+            <Stack spacing={1.5}>
+              {pendingAssignments.map((item) => (
+                <ScheduleCard
+                  key={item._id}
+                  center={item.branch?.name}
+                  detail={item.level}
+                  course={[item.suggestedCourse?.code, item.suggestedCourse?.name].filter(Boolean).join(" · ")}
+                  note={item.reason}
+                  action="Assign class"
+                  onAction={() => assignSchedule(item)}
+                />
+              ))}
+            </Stack>
+          ) : (
+          <TableContainer>
           <Table>
             <TableHead>
               <TableRow>
@@ -606,13 +664,7 @@ export default function Schedules() {
                     <Button
                       variant="contained"
                       size="small"
-                      onClick={() => {
-                        setSelectedPending(item);
-
-                        setAssignMode(true);
-
-                        setDialogOpen(true);
-                      }}
+                      onClick={() => assignSchedule(item)}
                     >
                       Assign
                     </Button>
@@ -621,6 +673,8 @@ export default function Schedules() {
               ))}
             </TableBody>
           </Table>
+          </TableContainer>
+          )}
         </Paper>
       )}
       <EditScheduleDialog
@@ -670,20 +724,16 @@ export default function Schedules() {
         month={monthFilter}
         year={yearFilter}
       />
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      >
+        <Alert severity={snackbarSeverity} onClose={() => setSnackbarOpen(false)} variant="filled">
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Container>
   );
-  <Snackbar
-    open={snackbarOpen}
-    autoHideDuration={3000}
-    onClose={() => setSnackbarOpen(false)}
-    anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-  >
-    <Alert
-      severity={snackbarSeverity}
-      onClose={() => setSnackbarOpen(false)}
-      variant="filled"
-    >
-      {snackbarMessage}
-    </Alert>
-  </Snackbar>;
 }

@@ -23,6 +23,7 @@ import {
   InputLabel,
   MenuItem,
   Select,
+  useMediaQuery,
 } from "@mui/material";
 import IconButton from "@mui/material/IconButton";
 import RefreshIcon from "@mui/icons-material/Refresh";
@@ -32,7 +33,66 @@ import EditLecturerDialog from "../components/dialogs/EditLecturerDialog";
 
 import { getLecturers } from "../services/lecturerService";
 
+function LecturerCourses({ lecturer }) {
+  const courses = (lecturer.courses ?? []).filter(Boolean);
+  if (!courses.length) return <Typography variant="body2" color="text.secondary">No courses assigned</Typography>;
+
+  return (
+    <Box
+      role="region"
+      aria-label={`Courses for ${lecturer.name}`}
+      tabIndex={0}
+      sx={{ maxWidth: "100%", overflowX: "auto", pb: 1 }}
+    >
+      <Box component="ul" sx={{ display: "flex", gap: 0.75, width: "max-content", listStyle: "none" }}>
+        {courses.map((course) => (
+          <Box component="li" key={course._id ?? course}>
+            <Chip
+              size="small"
+              label={typeof course === "string" ? course : [course.code, course.name].filter(Boolean).join(" ")}
+            />
+          </Box>
+        ))}
+      </Box>
+    </Box>
+  );
+}
+
+function LecturerStatus({ active }) {
+  return <Chip label={active ? "Active" : "Inactive"} color={active ? "success" : "error"} size="small" />;
+}
+
+function LecturerCard({ lecturer, onEdit }) {
+  const regions = lecturer.preferredRegions?.join(", ") || "None listed";
+  return (
+    <Paper component="article" variant="outlined" sx={{ p: 2, minWidth: 0, overflowWrap: "anywhere" }}>
+      <Stack spacing={1.5}>
+        <Stack direction="row" spacing={1} sx={{ justifyContent: "space-between", alignItems: "flex-start" }}>
+          <Box>
+            <Typography component="h2" fontWeight={750}>{lecturer.name}</Typography>
+            {lecturer.phone && <Typography variant="body2" color="text.secondary">{lecturer.phone}</Typography>}
+          </Box>
+          <LecturerStatus active={lecturer.active} />
+        </Stack>
+        <Box>
+          <Typography variant="body2" fontWeight={700} sx={{ mb: 0.75 }}>Courses</Typography>
+          <LecturerCourses lecturer={lecturer} />
+        </Box>
+        <Box>
+          <Typography variant="body2" fontWeight={700}>Preferred regions</Typography>
+          <Typography variant="body2" color="text.secondary">{regions}</Typography>
+        </Box>
+        <Typography variant="body2" color="text.secondary">
+          Assignments: {lecturer.currentAssignments ?? 0} / {lecturer.maxAssignmentsPerMonth ?? 0}
+        </Typography>
+        <Button fullWidth variant="outlined" onClick={onEdit} sx={{ minHeight: 44 }}>Edit lecturer</Button>
+      </Stack>
+    </Paper>
+  );
+}
+
 const Lecturers = () => {
+  const compact = useMediaQuery((theme) => theme.breakpoints.down("md"));
   // ---------------------------------------------
   // State
   // ---------------------------------------------
@@ -82,15 +142,16 @@ const Lecturers = () => {
     new Map(
       lecturers
         .flatMap((lecturer) => lecturer.courses || [])
-        .filter((course) => typeof course === "object")
+        .filter((course) => course?._id)
         .map((course) => [course._id, course]),
     ).values(),
-  ).sort((a, b) => a.code.localeCompare(b.code));
+  ).sort((a, b) => (a.code ?? "").localeCompare(b.code ?? ""));
 
   const filteredLecturers = lecturers.filter((lecturer) => {
     const searchText = search.toLowerCase().trim();
 
     const courseText = (lecturer.courses || [])
+      .filter(Boolean)
       .map((course) =>
         typeof course === "object"
           ? `${course.code || ""} ${course.name || ""}`
@@ -118,7 +179,7 @@ const Lecturers = () => {
     const matchesCourse =
       courseFilter === "ALL" ||
       (lecturer.courses || []).some(
-        (course) => typeof course === "object" && course._id === courseFilter,
+        (course) => (course?._id ?? course) === courseFilter,
       );
 
     const matchesStatus =
@@ -220,6 +281,7 @@ const Lecturers = () => {
           <IconButton
             aria-label="clear filters"
             color="primary"
+            sx={{ alignSelf: { xs: "flex-end", lg: "center" }, width: 44, height: 44 }}
             onClick={() => {
               setSearch("");
               setCourseFilter("ALL");
@@ -235,15 +297,21 @@ const Lecturers = () => {
       {/* LECTURER TABLE */}
       {/* ========================================= */}
 
-      <Paper>
-        {loading ? (
-          <Box
+      {loading ? (
+          <Paper
             sx={{ display: "grid", placeItems: "center", minHeight: 300 }}
           >
-            <CircularProgress />
-          </Box>
+            <CircularProgress aria-label="Loading lecturers" />
+          </Paper>
+        ) : compact ? (
+          <Stack spacing={1.5} aria-label="Lecturers">
+            {filteredLecturers.map((lecturer) => (
+              <LecturerCard key={lecturer._id} lecturer={lecturer} onEdit={() => handleEditLecturer(lecturer)} />
+            ))}
+            {filteredLecturers.length === 0 && <Alert severity="info">No lecturers found.</Alert>}
+          </Stack>
         ) : (
-          <TableContainer sx={{ borderRadius: 'inherit' }}>
+          <TableContainer component={Paper}>
             <Table>
               <TableHead>
                 <TableRow>
@@ -308,39 +376,7 @@ const Lecturers = () => {
                           maxWidth: 320,
                         }}
                       >
-                        <Box
-                          sx={{
-                            maxHeight: 110,
-                            overflowY: "auto",
-                            overflowX: "hidden",
-                            pr: 1,
-                          }}
-                        >
-                          <Stack direction="row" spacing={0.5} flexWrap="wrap">
-                            {(lecturer.courses || []).map((course) => {
-                              const courseName =
-                                typeof course === "object"
-                                  ? `${course.code || ""} ${course.name || ""}`
-                                  : course;
-
-                              return (
-                                <Chip
-                                  key={
-                                    typeof course === "object"
-                                      ? course._id
-                                      : course
-                                  }
-                                  label={courseName}
-                                  size="small"
-                                  sx={{
-                                    mb: 0.5,
-                                    maxWidth: "100%",
-                                  }}
-                                />
-                              );
-                            })}
-                          </Stack>
-                        </Box>
+                        <LecturerCourses lecturer={lecturer} />
                       </TableCell>
 
                       {/* Preferred Regions */}
@@ -362,11 +398,7 @@ const Lecturers = () => {
                       {/* Status */}
 
                       <TableCell>
-                        <Chip
-                          label={lecturer.active ? "Active" : "Inactive"}
-                          color={lecturer.active ? "success" : "error"}
-                          size="small"
-                        />
+                        <LecturerStatus active={lecturer.active} />
                       </TableCell>
 
                       {/* Actions */}
@@ -387,7 +419,6 @@ const Lecturers = () => {
             </Table>
           </TableContainer>
         )}
-      </Paper>
 
       {/* ========================================= */}
       {/* ADD LECTURER DIALOG */}

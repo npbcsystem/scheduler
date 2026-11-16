@@ -35,10 +35,12 @@ export default function AuthLayout({ title, description, children }) {
             sx={{ width: { xs: 48, md: 72 }, height: { xs: 48, md: 72 }, objectFit: "contain", bgcolor: "#fff", borderRadius: 2, p: 0.75 }}
           />
           <Box sx={{ textAlign: { xs: "center", md: "left" } }}>
-            <Typography variant="h5" component="div" sx={{ fontSize: { xs: "1.1rem", md: "1.85rem" } }}>
+            <Typography variant="h5" component="div" sx={{ fontWeight: 850, fontSize: { xs: "1.1rem", md: "1.85rem" } }}>
               Nairobi Pentecostal Bible College
             </Typography>
-            <Typography variant="body2" sx={{ color: brand.brass, mt: 0.75 }}>Academic scheduling</Typography>
+            <Typography variant="body2" sx={{ color: brand.brass, mt: 0.75, fontStyle: "italic" }}>
+              Nurturing Potential Building Character
+            </Typography>
           </Box>
         </Stack>
         <Box sx={{ p: { xs: 2.5, sm: 4, md: 5 }, alignSelf: "center" }}>

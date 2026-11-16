@@ -24,7 +24,7 @@ export default function Header({ onOpenNavigation }) {
       direction="row"
       spacing={1}
       sx={{
-        minHeight: 68, px: { xs: 1.5, sm: 3, xl: 4 }, flexShrink: 0, alignItems: "center", justifyContent: "space-between",
+        minHeight: 68, py: 1, px: { xs: 1, sm: 3, xl: 4 }, flexShrink: 0, alignItems: "center", justifyContent: "space-between",
         bgcolor: "background.paper", borderBottom: "1px solid", borderColor: "divider",
       }}
     >
@@ -32,15 +32,17 @@ export default function Header({ onOpenNavigation }) {
         <IconButton
           onClick={onOpenNavigation}
           aria-label="Open navigation"
-          sx={{ display: { md: "none" }, color: "primary.main" }}
+          sx={{ display: { md: "none" }, color: "primary.main", width: 44, height: 44, flexShrink: 0 }}
         >
           <MenuIcon />
         </IconButton>
         <Box sx={{ minWidth: 0 }}>
-          <Typography fontWeight={750} noWrap sx={{ display: { xs: "none", sm: "block" } }}>
+          <Typography sx={{ fontWeight: 850, fontSize: { xs: "0.9rem", sm: "1.12rem" }, lineHeight: 1.2 }}>
             Nairobi Pentecostal Bible College
           </Typography>
-          <Typography fontWeight={750} noWrap sx={{ display: { sm: "none" } }}>NPBC Scheduler</Typography>
+          <Typography component="p" color="text.secondary" sx={{ mt: 0.25, fontSize: { xs: "0.68rem", sm: "0.8rem" }, lineHeight: 1.25, fontStyle: "italic" }}>
+            Nurturing Potential Building Character
+          </Typography>
         </Box>
       </Stack>
       <Stack direction="row" spacing={{ xs: 0.5, sm: 1.5 }} sx={{ alignItems: "center" }}>
@@ -61,6 +63,7 @@ export default function Header({ onOpenNavigation }) {
           aria-haspopup="menu"
           aria-expanded={Boolean(anchor)}
           onClick={(event) => setAnchor(event.currentTarget)}
+          sx={{ minWidth: 44, minHeight: 44 }}
         >
           <Avatar sx={{ width: 34, height: 34, bgcolor: "primary.light", color: "primary.main", fontSize: 13, fontWeight: 750 }}>
             {initials}

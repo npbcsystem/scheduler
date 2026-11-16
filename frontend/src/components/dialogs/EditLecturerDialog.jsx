@@ -12,6 +12,7 @@ import {
   Select,
   Stack,
   TextField,
+  useMediaQuery,
 } from "@mui/material";
 
 import { updateLecturer } from "../../services/lecturerService";
@@ -35,6 +36,7 @@ export default function EditLecturerDialog({
   lecturer,
   onUpdated,
 }) {
+  const compact = useMediaQuery((theme) => theme.breakpoints.down("sm"));
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -188,6 +190,7 @@ export default function EditLecturerDialog({
 
   return (
     <Dialog
+      fullScreen={compact}
       open={open}
       onClose={onClose}
       fullWidth
@@ -363,9 +366,7 @@ export default function EditLecturerDialog({
                 Number(e.target.value)
               )
             }
-            inputProps={{
-              min: 1,
-            }}
+            slotProps={{ htmlInput: { min: 1 } }}
           />
 
           {/* Status */}

@@ -12,6 +12,7 @@ import {
   Select,
   Stack,
   TextField,
+  useMediaQuery,
 } from "@mui/material";
 
 import { createLecturer } from "../../services/lecturerService";
@@ -19,6 +20,7 @@ import { getCourses } from "../../services/courseService";
 import { getBranches } from "../../services/branchService";
 
 export default function AddLecturerDialog({ open, onClose, onCreated }) {
+  const compact = useMediaQuery((theme) => theme.breakpoints.down("sm"));
   const [name, setName] = useState("");
 
   const [phone, setPhone] = useState("");
@@ -153,7 +155,7 @@ export default function AddLecturerDialog({ open, onClose, onCreated }) {
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
+    <Dialog open={open} onClose={onClose} fullScreen={compact} fullWidth maxWidth="md">
       <DialogTitle>Add Lecturer</DialogTitle>
 
       <DialogContent>
@@ -297,9 +299,7 @@ export default function AddLecturerDialog({ open, onClose, onCreated }) {
             label="Maximum Assignments Per Month"
             value={maxAssignmentsPerMonth}
             onChange={(e) => setMaxAssignmentsPerMonth(Number(e.target.value))}
-            inputProps={{
-              min: 1,
-            }}
+            slotProps={{ htmlInput: { min: 1 } }}
           />
 
           {/* Status */}

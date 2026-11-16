@@ -42,7 +42,9 @@ export default function Layout() {
           key={pathname}
           sx={{
             flexGrow: 1,
+            minHeight: 0,
             overflowY: "auto",
+            overscrollBehaviorY: "contain",
             p: { xs: 2, sm: 3, xl: 4 },
           }}
         >

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import {
+  Alert,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -14,6 +15,7 @@ import {
   MenuItem,
   Chip,
   Box,
+  useMediaQuery,
 } from "@mui/material";
 
 import { getLecturersByCourseAvailability } from "../../services/lecturerService";
@@ -29,6 +31,7 @@ export default function EditScheduleDialog({
   assignMode,
   onUpdated,
 }) {
+  const compact = useMediaQuery((theme) => theme.breakpoints.down("sm"));
   const [lecturers, setLecturers] = useState([]);
 
   const [selectedLecturer, setSelectedLecturer] = useState("");
@@ -36,72 +39,48 @@ export default function EditScheduleDialog({
   const [status, setStatus] = useState("PENDING");
 
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [loadingLecturers, setLoadingLecturers] = useState(false);
 
   const [courses, setCourses] = useState([]);
 
   const [selectedCourse, setSelectedCourse] = useState("");
 
   const current = assignMode ? pendingAssignment : schedule;
+  const originalCourse = assignMode ? current?.suggestedCourse : current?.course;
 
   useEffect(() => {
-    if (!current) return;
-
-    loadCourses(current.branch._id, current.level);
-
-    if (assignMode) {
-      setSelectedCourse(current.suggestedCourse._id);
-
-      loadLecturers(current.suggestedCourse._id);
-
-      setSelectedLecturer("");
-
-      setStatus("DRAFT");
-    } else {
-      setSelectedCourse(current.course._id);
-
-      loadLecturers(current.course._id);
-
-      setSelectedLecturer(current.lecturer?._id || "");
-
-      setStatus(current.status);
+    if (!current || !open) return;
+    let active = true;
+    setSaveError("");
+    setCourses([]);
+    setSelectedCourse(originalCourse?._id || "");
+    setSelectedLecturer(assignMode ? "" : current.lecturer?._id || "");
+    setStatus(assignMode ? "DRAFT" : current.status);
+    if (current.branch?._id) {
+      getRemainingCourses(current.branch._id, current.level)
+        .then((data) => { if (active) setCourses(data); })
+        .catch(() => { if (active) setSaveError("Unable to load alternative courses."); });
     }
-  }, [current, assignMode]);
+    return () => { active = false; };
+  }, [current, assignMode, open, originalCourse]);
 
-  const loadLecturers = async (courseId) => {
-    try {
-      if (!current || !courseId) {
-        return;
-      }
-
-      const data = await getLecturersByCourseAvailability(
-        courseId,
-        current.week,
-        current.month,
-        current.year,
-        assignMode ? "" : current._id,
-      );
-
-      setLecturers(data);
-    } catch (err) {
-      console.error("LOAD AVAILABLE LECTURERS ERROR:", err);
-
-      setLecturers([]);
-    }
-  };
-
-  const loadCourses = async (branchId, level) => {
-    try {
-      const data = await getRemainingCourses(branchId, level);
-
-      setCourses(data);
-    } catch (err) {
-      console.log(err);
-    }
-  };
+  useEffect(() => {
+    if (!current || !open || !selectedCourse) return;
+    let active = true;
+    setLecturers([]);
+    setLoadingLecturers(true);
+    getLecturersByCourseAvailability(selectedCourse, current.week, current.month, current.year, assignMode ? "" : current._id)
+      .then((data) => { if (active) setLecturers(data); })
+      .catch(() => { if (active) setSaveError("Unable to load available lecturers."); })
+      .finally(() => { if (active) setLoadingLecturers(false); });
+    return () => { active = false; };
+  }, [current, open, assignMode, selectedCourse]);
 
   const handleSave = async () => {
     try {
       setSaving(true);
+      setSaveError("");
 
       if (assignMode) {
         await assignPendingAssignment(
@@ -133,7 +112,7 @@ export default function EditScheduleDialog({
 
       onClose();
     } catch (err) {
-      console.log(err);
+      setSaveError(err.response?.data?.message || "Unable to save the schedule. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -141,16 +120,24 @@ export default function EditScheduleDialog({
 
   if (!current) return null;
 
+  const courseOptions = originalCourse && !courses.some((course) => course._id === originalCourse._id)
+    ? [originalCourse, ...courses] : courses;
+  const originalLecturer = assignMode ? null : current.lecturer;
+  const lecturerOptions = originalLecturer?._id === selectedLecturer
+    && !lecturers.some((lecturer) => lecturer._id === selectedLecturer)
+    ? [originalLecturer, ...lecturers] : lecturers;
+  const needsLecturer = assignMode || selectedCourse !== originalCourse?._id;
+
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>
+    <Dialog open={open} onClose={saving ? undefined : onClose} fullScreen={compact} fullWidth maxWidth="sm" aria-labelledby="schedule-editor-title">
+      <DialogTitle id="schedule-editor-title">
         {assignMode ? "Assign Pending Class" : "Edit Schedule"}
       </DialogTitle>
 
-      <DialogContent>
+      <DialogContent sx={{ px: { xs: 2, sm: 3 }, py: 2 }}>
         <Stack spacing={3} sx={{ mt: 1 }}>
           <Typography>
-            <strong>Branch:</strong> {current.branch?.name}
+            <strong>Center:</strong> {current.branch?.name}
           </Typography>
 
           <Typography>
@@ -163,21 +150,20 @@ export default function EditScheduleDialog({
           </Typography>
 
           <FormControl fullWidth>
-            <InputLabel>Course</InputLabel>
+            <InputLabel id="schedule-course-label">Course</InputLabel>
 
             <Select
               label="Course"
+              labelId="schedule-course-label"
               value={selectedCourse}
-              onChange={async (e) => {
-                const value = e.target.value;
-
-                setSelectedCourse(value);
-
-                await loadLecturers(value);
+              onChange={(e) => {
+                setSelectedCourse(e.target.value);
+                setSelectedLecturer("");
+                setSaveError("");
               }}
             >
-              {courses.map((course) => (
-                <MenuItem key={course._id} value={course._id}>
+              {courseOptions.map((course) => (
+                <MenuItem key={course._id} value={course._id} sx={{ whiteSpace: "normal" }}>
                   {course.code} - {course.name}
                 </MenuItem>
               ))}
@@ -185,14 +171,18 @@ export default function EditScheduleDialog({
           </FormControl>
 
           <FormControl fullWidth>
-            <InputLabel>Lecturer</InputLabel>
+            <InputLabel id="schedule-lecturer-label">Lecturer</InputLabel>
 
             <Select
               label="Lecturer"
+              labelId="schedule-lecturer-label"
+              disabled={loadingLecturers}
               value={selectedLecturer}
               onChange={(e) => setSelectedLecturer(e.target.value)}
+              renderValue={(value) => lecturerOptions.find((lecturer) => lecturer._id === value)?.name ?? ""}
             >
-              {lecturers.map((lecturer) => {
+              {lecturerOptions.length === 0 && <MenuItem disabled value="">No lecturers available</MenuItem>}
+              {lecturerOptions.map((lecturer) => {
                 const assigned = lecturer.assignedThisWeek;
 
                 const isCurrentLecturer = lecturer._id === selectedLecturer;
@@ -205,6 +195,7 @@ export default function EditScheduleDialog({
                     value={lecturer._id}
                     disabled={disabled}
                     sx={{
+                      whiteSpace: "normal",
                       "&.Mui-selected": {
                         backgroundColor: "primary.main",
                         color: "primary.contrastText",
@@ -262,10 +253,11 @@ export default function EditScheduleDialog({
           </FormControl>
 
           <FormControl fullWidth>
-            <InputLabel>Status</InputLabel>
+            <InputLabel id="schedule-status-label">Status</InputLabel>
 
             <Select
               label="Status"
+              labelId="schedule-status-label"
               value={status}
               onChange={(e) => setStatus(e.target.value)}
             >
@@ -276,13 +268,18 @@ export default function EditScheduleDialog({
               <MenuItem value="CANCELLED">Cancelled</MenuItem>
             </Select>
           </FormControl>
+          {saveError && <Alert severity="error">{saveError}</Alert>}
         </Stack>
       </DialogContent>
 
-      <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
+      <DialogActions sx={{ px: 2, pb: "max(14px, env(safe-area-inset-bottom))", "& > button": { minHeight: 44, flex: { xs: 1, sm: "initial" } } }}>
+        <Button onClick={onClose} disabled={saving}>Cancel</Button>
 
-        <Button variant="contained" onClick={handleSave} disabled={saving}>
+        <Button
+          variant="contained"
+          onClick={handleSave}
+          disabled={saving || loadingLecturers || !selectedCourse || (needsLecturer && !selectedLecturer)}
+        >
           {saving ? "Saving..." : "Save"}
         </Button>
       </DialogActions>

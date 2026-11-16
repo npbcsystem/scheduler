@@ -1,5 +1,37 @@
 
 import Schedule from "../models/Schedule.js";
+import Lecturer from "../models/Lecturer.js";
+
+export const getIntegrationLecturers = async (_req, res) => {
+  try {
+    const records = await Lecturer.find()
+      .select("name email phone courses preferredRegions secondaryRegions active maxAssignmentsPerMonth")
+      .populate("courses", "name code level")
+      .sort({ name: 1, _id: 1 });
+
+    const lecturers = records.map((lecturer) => ({
+      id: String(lecturer._id),
+      name: lecturer.name,
+      email: lecturer.email || null,
+      phone: lecturer.phone || null,
+      active: lecturer.active,
+      courses: lecturer.courses.map((course) => ({
+        id: String(course._id),
+        name: course.name,
+        code: course.code || null,
+        level: course.level || null,
+      })),
+      preferredRegions: lecturer.preferredRegions,
+      secondaryRegions: lecturer.secondaryRegions,
+      maxAssignmentsPerMonth: lecturer.maxAssignmentsPerMonth,
+    }));
+
+    res.json({ success: true, totalLecturers: lecturers.length, lecturers });
+  } catch (error) {
+    console.error("INTEGRATION LECTURERS ERROR:", error);
+    res.status(500).json({ success: false, message: "Unable to retrieve lecturers." });
+  }
+};
 
 // Get the current date in the Nairobi timezone
 const getNairobiDate = () => {

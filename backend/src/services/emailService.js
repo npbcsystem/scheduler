@@ -1,9 +1,15 @@
 import nodemailer from "nodemailer";
 
+const port = Number(process.env.SMTP_PORT || 587);
+
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT || 587),
-  secure: false,
+  port,
+  secure: port === 465,
+  dnsTimeout: 5_000,
+  connectionTimeout: 5_000,
+  greetingTimeout: 5_000,
+  socketTimeout: 10_000,
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASSWORD,
@@ -17,12 +23,6 @@ export const sendEmail = async ({
   html,
 }) => {
   try {
-    console.log("Testing SMTP connection...");
-
-    await transporter.verify();
-
-    console.log("SMTP connection verified.");
-
     const info = await transporter.sendMail({
       from: `"NPBC Scheduler" <${process.env.SMTP_FROM}>`,
       to,
@@ -35,11 +35,11 @@ export const sendEmail = async ({
 
     return info;
   } catch (error) {
-    console.error(
-      "EMAIL ERROR:",
-      error.response || error.message
-    );
-
+    console.error("EMAIL ERROR:", {
+      code: error.code,
+      responseCode: error.responseCode,
+      command: error.command,
+    });
     throw new Error("Unable to send email.");
   }
 };

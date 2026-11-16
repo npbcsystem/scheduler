@@ -1,9 +1,18 @@
-import Branch from "../models/Branch.js";
+import Branch, { centerTypes } from "../models/Branch.js";
 import Progress from "../models/Progress.js";
 import Schedule from "../models/Schedule.js";
 
+const invalidCenterType = (type) =>
+  type !== undefined && type !== null && !centerTypes.includes(type);
+
+const centerTypeError = { message: "Select a valid center type." };
+
 export const createBranch = async (req, res) => {
   try {
+    if (invalidCenterType(req.body.type)) {
+      return res.status(400).json(centerTypeError);
+    }
+
     const branch = await Branch.create(req.body);
 
     res.status(201).json(branch);
@@ -57,12 +66,17 @@ export const updateBranch = async (req, res) => {
     const {
       name,
       region,
+      type,
       levels,
       week,
       active,
       coordinatorName,
       coordinatorPhone,
     } = req.body;
+
+    if (invalidCenterType(type)) {
+      return res.status(400).json(centerTypeError);
+    }
 
     // ---------------------------------------------
     // Validate levels
@@ -141,6 +155,10 @@ export const updateBranch = async (req, res) => {
 
     if (region !== undefined) {
       branch.region = region;
+    }
+
+    if (type !== undefined) {
+      branch.type = type;
     }
 
     if (levels !== undefined) {

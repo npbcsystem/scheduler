@@ -1,5 +1,12 @@
 import api from "./api";
 
+export const centerTypeLabels = {
+  NPBC: "NPBC",
+  PEFA: "PEFA",
+  WW: "Word Wide (W.W)",
+  DC: "Deliverance Church (DC)",
+};
+
 export const getBranches = async () => {
   const response = await api.get("/branches");
   return response.data;

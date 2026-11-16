@@ -12,6 +12,7 @@ import smsRoutes from "./routes/smsRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import protect from "./middleware/authMiddleware.js";
+import integrationRoutes from "./routes/integrationRoutes.js";
 
 const app = express();
 
@@ -30,6 +31,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/sms", protect, smsRoutes);
 app.use("/api/notifications", protect, notificationRoutes);
 // app.use("/api/import", importRoutes);
+
+app.use("/api/integration", integrationRoutes);
 
 app.get("/", (req, res) => {
   res.json({

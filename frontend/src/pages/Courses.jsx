@@ -1,3 +1,4 @@
+import PageHeader from "../components/layout/PageHeader";
 import { useEffect, useMemo, useState } from "react";
 
 import {
@@ -173,51 +174,19 @@ export default function Courses() {
   };
 
   return (
-    <Container
-      maxWidth="xl"
+    <Container disableGutters maxWidth="xl"
       sx={{ pb: 5 }}
     >
       {/* Header */}
 
-      <Stack
-        direction={{
-          xs: "column",
-          md: "row",
-        }}
-        justifyContent="space-between"
-        alignItems={{
-          xs: "stretch",
-          md: "center",
-        }}
-        spacing={2}
-        sx={{ mb: 3 }}
-      >
-        <Box>
-          <Typography
-            variant="h4"
-            fontWeight="bold"
-          >
-            Courses
-          </Typography>
+      <Box sx={{ mb: 3 }}>
+        <PageHeader title="Courses" description="Manage the course catalog across academic levels.">
+          <Button variant="contained" color="secondary" startIcon={<AddIcon />} onClick={() => setAddDialogOpen(true)}>
+            Add course
+          </Button>
+        </PageHeader>
+      </Box>
 
-          <Typography
-            color="text.secondary"
-          >
-            Manage courses, codes and
-            academic levels.
-          </Typography>
-        </Box>
-
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() =>
-            setAddDialogOpen(true)
-          }
-        >
-          Add Course
-        </Button>
-      </Stack>
 
       {error && (
         <Alert
@@ -256,7 +225,7 @@ export default function Courses() {
 
           <FormControl
             sx={{
-              minWidth: 220,
+              minWidth: { xs: 0, sm: 220 },
             }}
           >
             <InputLabel>
@@ -312,7 +281,7 @@ export default function Courses() {
             <CircularProgress />
           </Box>
         ) : (
-          <TableContainer>
+          <TableContainer sx={{ borderRadius: 'inherit' }}>
             <Table>
               <TableHead>
                 <TableRow>

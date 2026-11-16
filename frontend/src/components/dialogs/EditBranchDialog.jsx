@@ -16,11 +16,13 @@ import {
 
 import { updateBranch } from "../../services/branchService";
 import { kenyaCounties } from "./kenya";
+import CenterTypeField from "./CenterTypeField";
 
 export default function EditBranchDialog({ open, onClose, branch, onUpdated }) {
   const [name, setName] = useState("");
 
   const [region, setRegion] = useState("");
+  const [type, setType] = useState("UNASSIGNED");
 
   const [levels, setLevels] = useState([]);
 
@@ -44,6 +46,7 @@ export default function EditBranchDialog({ open, onClose, branch, onUpdated }) {
     setCoordinatorPhone(branch?.coordinatorPhone || "");
 
     setRegion(branch.region || "");
+    setType(branch.type ?? "UNASSIGNED");
 
     setLevels(branch.levels || []);
 
@@ -59,6 +62,7 @@ export default function EditBranchDialog({ open, onClose, branch, onUpdated }) {
       await updateBranch(branch._id, {
         name,
         region,
+        type: type === "UNASSIGNED" ? null : type,
         levels,
         week,
         active,
@@ -94,10 +98,12 @@ export default function EditBranchDialog({ open, onClose, branch, onUpdated }) {
         <Stack spacing={3} sx={{ mt: 1 }}>
           <TextField
             fullWidth
-            label="Branch Name"
+            label="Center Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
+
+          <CenterTypeField value={type} onChange={setType} />
 
           <TextField
             fullWidth

@@ -1,3 +1,5 @@
+import PageHeader from "../components/layout/PageHeader";
+import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import { useEffect, useState } from "react";
 
 import {
@@ -142,38 +144,19 @@ const Lecturers = () => {
   // ---------------------------------------------
 
   return (
-    <Container maxWidth="xl">
+    <Container disableGutters maxWidth="xl">
       {/* ========================================= */}
       {/* HEADER */}
       {/* ========================================= */}
 
-      <Stack
-        direction={{
-          xs: "column",
-          md: "row",
-        }}
-        justifyContent="space-between"
-        alignItems={{
-          xs: "stretch",
-          md: "center",
-        }}
-        spacing={2}
-        sx={{ mb: 3 }}
-      >
-        <Box>
-          <Typography variant="h4" fontWeight="bold">
-            Lecturers
-          </Typography>
+      <Box sx={{ mb: 3 }}>
+        <PageHeader title="Lecturers" description="Manage teaching assignments, regions, and lecturer availability.">
+          <Button variant="contained" color="secondary" startIcon={<AddRoundedIcon />} onClick={() => setAddDialogOpen(true)}>
+            Add lecturer
+          </Button>
+        </PageHeader>
+      </Box>
 
-          <Typography color="text.secondary">
-            Manage lecturers, courses, regions and teaching capacity.
-          </Typography>
-        </Box>
-
-        <Button variant="contained" onClick={() => setAddDialogOpen(true)}>
-          Add Lecturer
-        </Button>
-      </Stack>
 
       {/* ========================================= */}
       {/* ERROR */}
@@ -188,7 +171,7 @@ const Lecturers = () => {
         <Stack
           direction={{
             xs: "column",
-            md: "row",
+            lg: "row",
           }}
           spacing={2}
         >
@@ -200,7 +183,7 @@ const Lecturers = () => {
             onChange={(e) => setSearch(e.target.value)}
           />
 
-          <FormControl sx={{ minWidth: 260 }}>
+          <FormControl sx={{ minWidth: { xs: 0, sm: 260 } }}>
             <InputLabel>Course</InputLabel>
 
             <Select
@@ -218,7 +201,7 @@ const Lecturers = () => {
             </Select>
           </FormControl>
 
-          <FormControl sx={{ minWidth: 160 }}>
+          <FormControl sx={{ minWidth: { xs: 0, sm: 160 } }}>
             <InputLabel>Status</InputLabel>
 
             <Select
@@ -255,15 +238,12 @@ const Lecturers = () => {
       <Paper>
         {loading ? (
           <Box
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            minHeight={300}
+            sx={{ display: "grid", placeItems: "center", minHeight: 300 }}
           >
             <CircularProgress />
           </Box>
         ) : (
-          <TableContainer>
+          <TableContainer sx={{ borderRadius: 'inherit' }}>
             <Table>
               <TableHead>
                 <TableRow>
@@ -324,7 +304,7 @@ const Lecturers = () => {
                       <TableCell
                         sx={{
                           width: 320,
-                          minWidth: 320,
+                          minWidth: { xs: 0, sm: 320 },
                           maxWidth: 320,
                         }}
                       >
@@ -384,7 +364,7 @@ const Lecturers = () => {
                       <TableCell>
                         <Chip
                           label={lecturer.active ? "Active" : "Inactive"}
-                          color={lecturer.active ? "success" : "default"}
+                          color={lecturer.active ? "success" : "error"}
                           size="small"
                         />
                       </TableCell>

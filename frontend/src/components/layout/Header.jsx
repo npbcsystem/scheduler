@@ -1,286 +1,95 @@
-import {
-  AppBar,
-  Toolbar,
-  Typography,
-  Box,
-  Chip,
-  IconButton,
-  Menu,
-  MenuItem,
-  Divider,
-  ListItemIcon,
-  ListItemText,
-} from "@mui/material";
-
+import { Avatar, Box, Chip, Divider, IconButton, Menu, MenuItem, Stack, Typography } from "@mui/material";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import LogoutIcon from "@mui/icons-material/Logout";
-
+import MenuIcon from "@mui/icons-material/Menu";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
-export default function Header() {
+export default function Header({ onOpenNavigation }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-
-  const [anchorEl, setAnchorEl] = useState(null);
-
-  const menuOpen = Boolean(anchorEl);
-
-  const formattedDate = new Date().toLocaleDateString("en-US", {
-    weekday: "short",
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-
-  const handleUserMenu = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
-
-  const handleLogout = () => {
-    handleClose();
-    logout();
-    navigate("/login", { replace: true });
-  };
+  const [anchor, setAnchor] = useState(null);
+  const name = user?.name || "Administrator";
+  const role = user?.role?.toLowerCase() || "admin";
+  const initials = name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
+  const date = new Intl.DateTimeFormat("en-KE", {
+    weekday: "short", day: "numeric", month: "short", year: "numeric",
+  }).format(new Date());
 
   return (
-    <AppBar
-      position="static"
-      color="inherit"
-      elevation={0}
+    <Stack
+      component="header"
+      direction="row"
+      spacing={1}
       sx={{
-        backgroundColor: "rgba(255,255,255,0.92)",
-        backdropFilter: "blur(12px)",
-        borderBottom: "1px solid #E6ECF4",
-        zIndex: 1,
+        minHeight: 68, px: { xs: 1.5, sm: 3, xl: 4 }, flexShrink: 0, alignItems: "center", justifyContent: "space-between",
+        bgcolor: "background.paper", borderBottom: "1px solid", borderColor: "divider",
       }}
     >
-      <Toolbar
-        sx={{
-          justifyContent: "space-between",
-          py: 1.25,
-          px: { xs: 2, md: 4 },
-          minHeight: 76,
-        }}
-      >
-        {/* LEFT - NPBC Branding */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Box
-            component="img"
-            src="/npbc-logo-2.png"
-            alt="NPBC Logo"
-            sx={{
-              height: 46,
-              width: "auto",
-              objectFit: "contain",
-              p: 0.5,
-              borderRadius: 2,
-              bgcolor: "#FFF",
-              border: "1px solid #E6ECF4",
-            }}
-          />
-
-          <Box>
-            <Typography
-              variant="h6"
-              fontWeight={700}
-              sx={{
-                color: "#102A43",
-                lineHeight: 1.2,
-                fontSize: "1.05rem",
-              }}
-            >
-              Nairobi Pentecostal Bible College
-            </Typography>
-
-            <Typography
-              variant="caption"
-              sx={{
-                color: "#64748B",
-                fontWeight: 500,
-              }}
-            >
-              Class Scheduling System
-            </Typography>
-          </Box>
-        </Box>
-
-        {/* RIGHT */}
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 2,
-          }}
+      <Stack direction="row" spacing={1.25} sx={{ minWidth: 0, alignItems: "center" }}>
+        <IconButton
+          onClick={onOpenNavigation}
+          aria-label="Open navigation"
+          sx={{ display: { md: "none" }, color: "primary.main" }}
         >
-          {/* DATE */}
-          <Chip
-            icon={
-              <CalendarTodayIcon
-                style={{
-                  fontSize: 14,
-                  color: "#64748B",
-                }}
-              />
-            }
-            label={formattedDate}
-            variant="outlined"
-            sx={{
-              display: { xs: "none", sm: "inline-flex" },
-              borderColor: "#E2E8F0",
-              color: "#53657C",
-              fontWeight: 500,
-              fontSize: "0.8rem",
-              bgcolor: "#F7F9FC",
-            }}
-          />
-
-          {/* USER */}
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-            }}
-          >
-            <Box
-              sx={{
-                display: { xs: "none", md: "block" },
-                textAlign: "right",
-              }}
-            >
-              <Typography
-                sx={{
-                  fontSize: "0.85rem",
-                  fontWeight: 700,
-                  color: "#102A43",
-                  lineHeight: 1.2,
-                }}
-              >
-                {user?.name || "Administrator"}
-              </Typography>
-
-              <Typography
-                sx={{
-                  fontSize: "0.7rem",
-                  color: "#64748B",
-                  textTransform: "capitalize",
-                }}
-              >
-                {user?.role?.toLowerCase() || "admin"}
-              </Typography>
-            </Box>
-
-            <IconButton
-              onClick={handleUserMenu}
-              size="large"
-              aria-label="Account menu"
-              aria-controls={menuOpen ? "account-menu" : undefined}
-              aria-haspopup="true"
-              aria-expanded={menuOpen ? "true" : undefined}
-              sx={{
-                color: "#1769E0",
-                border: "1px solid #E2E8F0",
-                bgcolor: "#F7F9FC",
-                "&:hover": {
-                  bgcolor: "#EEF4FF",
-                },
-              }}
-            >
-              <AccountCircleIcon fontSize="medium" />
-            </IconButton>
-
-            {/* ACCOUNT MENU */}
-            <Menu
-              id="account-menu"
-              anchorEl={anchorEl}
-              open={menuOpen}
-              onClose={handleClose}
-              onClick={handleClose}
-              transformOrigin={{
-                horizontal: "right",
-                vertical: "top",
-              }}
-              anchorOrigin={{
-                horizontal: "right",
-                vertical: "bottom",
-              }}
-              slotProps={{
-                paper: {
-                  elevation: 4,
-                  sx: {
-                    mt: 1,
-                    minWidth: 240,
-                    borderRadius: 2,
-                    border: "1px solid #E6ECF4",
-                  },
-                },
-              }}
-            >
-              {/* USER INFORMATION */}
-              <Box sx={{ px: 2, py: 1.5 }}>
-                <Typography
-                  sx={{
-                    fontWeight: 700,
-                    color: "#102A43",
-                  }}
-                >
-                  {user?.name || "Administrator"}
-                </Typography>
-
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: "#64748B",
-                    mt: 0.3,
-                  }}
-                >
-                  {user?.email}
-                </Typography>
-
-                <Chip
-                  label={user?.role || "ADMIN"}
-                  size="small"
-                  sx={{
-                    mt: 1,
-                    fontSize: "0.7rem",
-                    fontWeight: 700,
-                  }}
-                />
-              </Box>
-
-              <Divider />
-
-              {/* LOGOUT */}
-              <MenuItem
-                onClick={handleLogout}
-                sx={{
-                  py: 1.3,
-                  color: "#C62828",
-                  "&:hover": {
-                    bgcolor: "#FFF5F5",
-                  },
-                }}
-              >
-                <ListItemIcon>
-                  <LogoutIcon
-                    fontSize="small"
-                    sx={{ color: "#C62828" }}
-                  />
-                </ListItemIcon>
-
-                <ListItemText primary="Logout" />
-              </MenuItem>
-            </Menu>
-          </Box>
+          <MenuIcon />
+        </IconButton>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography fontWeight={750} noWrap sx={{ display: { xs: "none", sm: "block" } }}>
+            Nairobi Pentecostal Bible College
+          </Typography>
+          <Typography fontWeight={750} noWrap sx={{ display: { sm: "none" } }}>NPBC Scheduler</Typography>
         </Box>
-      </Toolbar>
-    </AppBar>
+      </Stack>
+      <Stack direction="row" spacing={{ xs: 0.5, sm: 1.5 }} sx={{ alignItems: "center" }}>
+        <Chip
+          icon={<CalendarTodayIcon />}
+          label={date}
+          variant="outlined"
+          sx={{ display: { xs: "none", lg: "inline-flex" }, bgcolor: "background.default", borderColor: "divider" }}
+        />
+        <Box sx={{ display: { xs: "none", sm: "block" }, textAlign: "right" }}>
+          <Typography variant="body2" fontWeight={700}>{name}</Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ textTransform: "capitalize" }}>{role}</Typography>
+        </Box>
+        <IconButton
+          size="small"
+          aria-label="Account menu"
+          aria-controls={anchor ? "account-menu" : undefined}
+          aria-haspopup="menu"
+          aria-expanded={Boolean(anchor)}
+          onClick={(event) => setAnchor(event.currentTarget)}
+        >
+          <Avatar sx={{ width: 34, height: 34, bgcolor: "primary.light", color: "primary.main", fontSize: 13, fontWeight: 750 }}>
+            {initials}
+          </Avatar>
+          <ExpandMoreIcon fontSize="small" sx={{ display: { xs: "none", sm: "block" }, ml: 0.25 }} />
+        </IconButton>
+        <Menu
+          id="account-menu"
+          anchorEl={anchor}
+          open={Boolean(anchor)}
+          onClose={() => setAnchor(null)}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+          transformOrigin={{ vertical: "top", horizontal: "right" }}
+          slotProps={{ paper: { sx: { mt: 1, minWidth: 215, maxWidth: "calc(100vw - 32px)", border: "1px solid", borderColor: "divider" } } }}
+        >
+          <Box sx={{ px: 2, py: 1 }}>
+            <Typography fontWeight={700}>{name}</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ overflowWrap: "anywhere" }}>{user?.email}</Typography>
+          </Box>
+          <Divider />
+          <MenuItem onClick={() => {
+            setAnchor(null);
+            logout();
+            navigate("/login", { replace: true });
+          }} sx={{ color: "error.main", gap: 1.25 }}>
+            <LogoutIcon fontSize="small" /> Log out
+          </MenuItem>
+        </Menu>
+      </Stack>
+    </Stack>
   );
 }

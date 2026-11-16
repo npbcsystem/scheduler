@@ -1,3 +1,5 @@
+import PageHeader from "../components/layout/PageHeader";
+import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import { useEffect, useState } from "react";
 
 import {
@@ -27,7 +29,7 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 
 import EditBranchDialog from "../components/dialogs/EditBranchDialog";
 
-import { getBranches } from "../services/branchService";
+import { centerTypeLabels, getBranches } from "../services/branchService";
 
 import AddBranchDialog from "../components/dialogs/AddBranchDialog";
 
@@ -52,6 +54,7 @@ export default function Branches() {
   const [levelFilter, setLevelFilter] = useState("ALL");
   const [weekFilter, setWeekFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [typeFilter, setTypeFilter] = useState("ALL");
 
   // ---------------------------------------------
   // Load branches
@@ -114,42 +117,25 @@ export default function Branches() {
       (statusFilter === "ACTIVE" && branch.active) ||
       (statusFilter === "INACTIVE" && !branch.active);
 
-    return matchesSearch && matchesLevel && matchesWeek && matchesStatus;
+    const matchesType = typeFilter === "ALL" || (branch.type ?? "UNASSIGNED") === typeFilter;
+
+    return matchesSearch && matchesLevel && matchesWeek && matchesStatus && matchesType;
   });
 
   return (
-    <Container maxWidth="xl">
+    <Container disableGutters maxWidth="xl">
       {/* ========================================= */}
       {/* HEADER */}
       {/* ========================================= */}
 
-      <Stack
-        direction={{
-          xs: "column",
-          md: "row",
-        }}
-        justifyContent="space-between"
-        alignItems={{
-          xs: "stretch",
-          md: "center",
-        }}
-        spacing={2}
-        sx={{ mb: 3 }}
-      >
-        <Box>
-          <Typography variant="h4" fontWeight="bold">
-            Centers
-          </Typography>
+      <Box sx={{ mb: 3 }}>
+        <PageHeader title="Centers" description="Manage teaching locations, academic levels, and teaching weeks.">
+          <Button variant="contained" color="secondary" startIcon={<AddRoundedIcon />} onClick={() => setAddDialogOpen(true)}>
+            Add center
+          </Button>
+        </PageHeader>
+      </Box>
 
-          <Typography color="text.secondary">
-            Manage branches, levels, teaching weeks and status.
-          </Typography>
-        </Box>
-
-        <Button variant="contained" onClick={() => setAddDialogOpen(true)}>
-          Add Center
-        </Button>
-      </Stack>
 
       {/* ========================================= */}
       {/* ERROR */}
@@ -164,9 +150,11 @@ export default function Branches() {
         <Stack
           direction={{
             xs: "column",
-            md: "row",
+            lg: "row",
           }}
           spacing={2}
+          useFlexGap
+          sx={{ flexWrap: "wrap", "& > .MuiTextField-root": { flex: { lg: "1 1 210px" } } }}
         >
           <TextField
             fullWidth
@@ -176,7 +164,23 @@ export default function Branches() {
             onChange={(e) => setSearch(e.target.value)}
           />
 
-          <FormControl sx={{ minWidth: 180 }}>
+          <FormControl sx={{ minWidth: { xs: 0, sm: 180 } }}>
+            <InputLabel id="center-type-filter">Center type</InputLabel>
+            <Select
+              labelId="center-type-filter"
+              label="Center type"
+              value={typeFilter}
+              onChange={(event) => setTypeFilter(event.target.value)}
+            >
+              <MenuItem value="ALL">All types</MenuItem>
+              <MenuItem value="UNASSIGNED">Unassigned</MenuItem>
+              {Object.entries(centerTypeLabels).map(([type, label]) => (
+                <MenuItem key={type} value={type}>{label}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <FormControl sx={{ minWidth: { xs: 0, sm: 180 } }}>
             <InputLabel>Level</InputLabel>
 
             <Select
@@ -194,7 +198,7 @@ export default function Branches() {
             </Select>
           </FormControl>
 
-          <FormControl sx={{ minWidth: 150 }}>
+          <FormControl sx={{ minWidth: { xs: 0, sm: 150 } }}>
             <InputLabel>Week</InputLabel>
 
             <Select
@@ -211,11 +215,11 @@ export default function Branches() {
               <MenuItem value={3}>Week 3</MenuItem>
 
               <MenuItem value={4}>Week 4</MenuItem>
-              <MenuItem value={4}>Week 4</MenuItem>
+              <MenuItem value={5}>Week 5</MenuItem>
             </Select>
           </FormControl>
 
-          <FormControl sx={{ minWidth: 160 }}>
+          <FormControl sx={{ minWidth: { xs: 0, sm: 160 } }}>
             <InputLabel>Status</InputLabel>
 
             <Select
@@ -239,6 +243,7 @@ export default function Branches() {
               setLevelFilter("ALL");
               setWeekFilter("ALL");
               setStatusFilter("ALL");
+              setTypeFilter("ALL");
             }}
           >
             <RefreshIcon />
@@ -253,21 +258,20 @@ export default function Branches() {
       <Paper>
         {loading ? (
           <Box
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            minHeight={300}
+            sx={{ display: "grid", placeItems: "center", minHeight: 300 }}
           >
             <CircularProgress />
           </Box>
         ) : (
-          <TableContainer>
+          <TableContainer sx={{ borderRadius: 'inherit' }}>
             <Table>
               <TableHead>
                 <TableRow>
                   <TableCell>
                     <b>Center</b>
                   </TableCell>
+
+                  <TableCell>Type</TableCell>
 
                   <TableCell>
                     <b>Region</b>
@@ -298,8 +302,8 @@ export default function Branches() {
               <TableBody>
                 {filteredBranches.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center">
-                      No branches found.
+                    <TableCell colSpan={8} align="center">
+                      No centers found.
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -310,6 +314,8 @@ export default function Branches() {
                       <TableCell>
                         <Typography fontWeight="bold">{branch.name}</Typography>
                       </TableCell>
+
+                      <TableCell>{centerTypeLabels[branch.type] ?? "Unassigned"}</TableCell>
 
                       {/* Region */}
 
@@ -347,7 +353,7 @@ export default function Branches() {
                       <TableCell>
                         <Chip
                           label={branch.active ? "Active" : "Inactive"}
-                          color={branch.active ? "success" : "default"}
+                          color={branch.active ? "success" : "error"}
                           size="small"
                         />
                       </TableCell>

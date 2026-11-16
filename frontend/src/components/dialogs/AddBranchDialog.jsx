@@ -16,10 +16,12 @@ import {
 
 import { createBranch } from "../../services/branchService";
 import { kenyaCounties } from "./kenya";
+import CenterTypeField from "./CenterTypeField";
 
 export default function AddBranchDialog({ open, onClose, onCreated }) {
   const [name, setName] = useState("");
   const [region, setRegion] = useState("");
+  const [type, setType] = useState("UNASSIGNED");
   const [levels, setLevels] = useState([]);
   const [week, setWeek] = useState(1);
   const [active, setActive] = useState(true);
@@ -37,6 +39,7 @@ export default function AddBranchDialog({ open, onClose, onCreated }) {
       await createBranch({
         name,
         region,
+        type: type === "UNASSIGNED" ? null : type,
         levels,
         week,
         active,
@@ -51,6 +54,7 @@ export default function AddBranchDialog({ open, onClose, onCreated }) {
       // Reset form
       setName("");
       setRegion("");
+      setType("UNASSIGNED");
       setLevels([]);
       setWeek(1);
       setActive(true);
@@ -75,6 +79,7 @@ export default function AddBranchDialog({ open, onClose, onCreated }) {
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
+          <CenterTypeField value={type} onChange={setType} />
           <TextField
             fullWidth
             label="Coordinator Name"

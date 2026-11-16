@@ -1,3 +1,4 @@
+import PageHeader from "../components/layout/PageHeader";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -72,26 +73,10 @@ export default function Generate() {
   };
 
   return (
-    <Container maxWidth="md" sx={{ py: { xs: 1, md: 2 } }}>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" gutterBottom>
-          Build your weekly schedule
-        </Typography>
-        <Typography color="text.secondary">
-          Select a teaching period and intelligently assign the available lecturers.
-        </Typography>
-      </Box>
-      <Card sx={{ overflow: "hidden" }}>
-        <Box sx={{ height: 5, background: "linear-gradient(90deg, #1769E0, #00A78E)" }} />
+    <Container disableGutters maxWidth="xl">
+      <PageHeader title="Generate schedule" description="Assign available lecturers to active centers for a teaching period." />
+      <Card sx={{ mt: 3 }}>
         <CardContent sx={{ p: { xs: 2.5, md: 4 } }}>
-          <Typography variant="h5" gutterBottom>
-            Generate Schedule
-          </Typography>
-
-          <Typography color="text.secondary" sx={{ mb: 4 }}>
-            Generate schedules for all active branches.
-          </Typography>
-
           {success && (
             <Alert severity="success" sx={{ mb: 3 }}>
               {success}{" "}
@@ -110,10 +95,10 @@ export default function Generate() {
           <Stack spacing={3}>
             <Box>
               <Typography gutterBottom fontWeight="bold" sx={{ color: "text.primary" }}>
-                Schedule Period
+                Teaching period
               </Typography>
 
-              <Stack spacing={2}>
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mt: 1.5 }}>
                 {/* Year */}
                 <FormControl fullWidth>
                   <InputLabel>Year</InputLabel>
@@ -171,6 +156,7 @@ export default function Generate() {
 
             <Button
               size="large"
+              sx={{ alignSelf: "center" }}
               variant="contained"
               startIcon={
                 loading ? (
@@ -209,7 +195,7 @@ export default function Generate() {
               <Card sx={{ mt: 3 }}>
                 <CardContent>
                   <Typography variant="h6" color="error">
-                    Unassigned Classes
+                    Unassigned classes
                   </Typography>
 
                   {summary.unassigned.map((item, index) => (

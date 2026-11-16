@@ -1,3 +1,4 @@
+import PageHeader from "../components/layout/PageHeader";
 import { useEffect, useState } from "react";
 
 import {
@@ -271,15 +272,9 @@ export default function Schedules() {
   //--------------------------------------------------
 
   return (
-    <Container maxWidth="xl">
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" fontWeight="bold" textAlign="center">
-          Schedule Management
-        </Typography>
-
-        <Typography color="text.secondary" textAlign="center" sx={{ mt: 1 }}>
-          Generate, review, approve and manage branch schedules.
-        </Typography>
+    <Container disableGutters maxWidth="xl">
+      <Box sx={{ mb: 3 }}>
+        <PageHeader title="Schedules" description="Review assignments, approve teaching weeks, and record completed classes." />
       </Box>
 
       {/* --------------------------------------------------
@@ -305,10 +300,9 @@ export default function Schedules() {
           {/* Action Buttons Group (Left Side) */}
           <Stack
             direction="row"
-            alignItems="center"
             spacing={1.5}
-            flexWrap="wrap"
             useFlexGap
+            sx={{ alignItems: "center", flexWrap: "wrap" }}
           >
             <Button
               variant="contained"
@@ -320,7 +314,7 @@ export default function Schedules() {
             </Button>
 
             <Button
-              variant="contained"
+              variant="outlined"
               color="secondary"
               onClick={handleApproveAll}
               disabled={loading}
@@ -338,7 +332,7 @@ export default function Schedules() {
             </Button>
 
             <Button
-              variant="contained"
+              variant="outlined"
               color="warning"
               onClick={handleCompleteMonth}
               disabled={loading}
@@ -347,7 +341,7 @@ export default function Schedules() {
             </Button>
 
             <Button
-              variant="contained"
+              variant="outlined"
               color="info"
               onClick={() => setNotifyDialogOpen(true)}
               disabled={
@@ -375,15 +369,7 @@ export default function Schedules() {
             variant="outlined"
             startIcon={<PrintIcon />}
             onClick={() => setExportDialogOpen(true)}
-            sx={{
-              color: "common.black",
-              borderColor: "common.black",
-              ml: "auto", // Ensures it stays pushed right even if wrap occurs
-              "&:hover": {
-                borderColor: "common.black",
-                backgroundColor: "rgba(0, 0, 0, 0.04)",
-              },
-            }}
+            sx={{ ml: { sm: "auto" } }}
           >
             Print
           </Button>
@@ -397,15 +383,16 @@ export default function Schedules() {
       )}
 
       <Paper sx={{ p: 2, mb: 3 }}>
-        <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+        <Stack direction={{ xs: "column", lg: "row" }} spacing={2}>
           <TextField
             fullWidth
-            label="Search Branch / Course / Lecturer"
+            label="Search schedules"
+            placeholder="Center, course, or lecturer"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
 
-          <FormControl sx={{ minWidth: 150 }}>
+          <FormControl sx={{ minWidth: { xs: 0, sm: 150 } }}>
             <InputLabel>Year</InputLabel>
 
             <Select
@@ -421,7 +408,7 @@ export default function Schedules() {
             </Select>
           </FormControl>
 
-          <FormControl sx={{ minWidth: 180 }}>
+          <FormControl sx={{ minWidth: { xs: 0, sm: 180 } }}>
             <InputLabel>Month</InputLabel>
 
             <Select
@@ -444,7 +431,7 @@ export default function Schedules() {
             </Select>
           </FormControl>
 
-          <FormControl sx={{ minWidth: 180 }}>
+          <FormControl sx={{ minWidth: { xs: 0, sm: 180 } }}>
             <InputLabel>Week</InputLabel>
 
             <Select
@@ -471,15 +458,12 @@ export default function Schedules() {
       <Paper>
         {loading ? (
           <Box
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            height={300}
+            sx={{ display: "grid", placeItems: "center", minHeight: 300 }}
           >
             <CircularProgress />
           </Box>
         ) : (
-          <TableContainer>
+          <TableContainer sx={{ borderRadius: 'inherit' }}>
             <Table>
               <TableHead>
                 <TableRow>
@@ -488,7 +472,7 @@ export default function Schedules() {
                   </TableCell>
 
                   <TableCell>
-                    <b>Branch</b>
+                    <b>Center</b>
                   </TableCell>
 
                   <TableCell>
@@ -591,7 +575,7 @@ export default function Schedules() {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Branch</TableCell>
+                <TableCell>Center</TableCell>
 
                 <TableCell>Level</TableCell>
 

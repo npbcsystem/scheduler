@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 
+export const centerTypes = ["NPBC", "PEFA", "WW", "DC"];
+
 const branchSchema = new mongoose.Schema(
   {
     name: {
@@ -11,6 +13,12 @@ const branchSchema = new mongoose.Schema(
     region: {
       type: String,
       required: true,
+    },
+
+    type: {
+      type: String,
+      enum: centerTypes,
+      default: null,
     },
 
     week: {
